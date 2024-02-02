@@ -113,7 +113,16 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Driver.c" />
+    <ClCompile Include="Device.cpp" />
+    <ClCompile Include="Dispatch.cpp" />
+    <ClCompile Include="DispatchHandler.cpp" />
+    <ClCompile Include="Driver.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Device.h" />
+    <ClInclude Include="Dispatch.h" />
+    <ClInclude Include="DispatchHandler.h" />
+    <ClInclude Include="IoctlCode.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
