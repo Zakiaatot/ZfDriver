@@ -44,7 +44,7 @@
     <ClInclude Include="Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IoctlCode.h">
+    <ClInclude Include="IoctlUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DispatchHandler.h">

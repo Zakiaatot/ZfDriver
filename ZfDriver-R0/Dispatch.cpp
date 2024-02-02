@@ -1,18 +1,6 @@
 #include "Dispatch.h"
-#include "IoctlCode.h"
+#include "IoctlUtils.h"
 #include "DispatchHandler.h"
-
-VOID Dispatch::Register(IN PDRIVER_OBJECT pDriObj)
-{
-	for (int i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; i++)
-	{
-		pDriObj->MajorFunction[i] = DispatchDefault;
-	}
-
-	pDriObj->MajorFunction[IRP_MJ_CREATE] = DispatchCreate;
-	pDriObj->MajorFunction[IRP_MJ_CLOSE] = DispatchClose;
-	pDriObj->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DispatchIoctl;
-}
 
 NTSTATUS DispatchDefault(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
@@ -24,6 +12,7 @@ NTSTATUS DispatchDefault(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
 NTSTATUS DispatchCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
+	DbgPrint("[ZfDriver] created once\n");
 	pIrp->IoStatus.Status = STATUS_SUCCESS;
 	pIrp->IoStatus.Information = 0;
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
@@ -32,6 +21,7 @@ NTSTATUS DispatchCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
 NTSTATUS DispatchClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
+	DbgPrint("[ZfDriver] closed once\n");
 	pIrp->IoStatus.Status = STATUS_SUCCESS;
 	pIrp->IoStatus.Information = 0;
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
@@ -63,12 +53,23 @@ NTSTATUS DispatchIoctl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 	uOutSize = pIrpStack->Parameters.DeviceIoControl.OutputBufferLength;
 
 	// Generate Context
-	HandlerContext handlerContext = { &status,pIrpStack,uIoControlCode,pIoBuffer,uInSize,uOutSize };
+	HandlerContext handlerContext = { pIrpStack,uIoControlCode,pIoBuffer,uInSize,uOutSize };
 
 	// Different Code Handler
 	switch (uIoControlCode)
 	{
-
+	case IOCTL_CODE_TEST:
+		status = DispatchHandler::Test(&handlerContext);
+		break;
+	case IOCTL_CODE_READ:
+		status = DispatchHandler::Read(&handlerContext);
+		break;
+	case IOCTL_CODE_WRITE:
+		status = DispatchHandler::Write(&handlerContext);
+		break;
+	case IOCTL_CODE_FORCE_DELETE:
+		status = DispatchHandler::ForceDelete(&handlerContext);
+		break;
 	}
 
 	// Judge Success Or Failed
@@ -83,4 +84,16 @@ NTSTATUS DispatchIoctl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 	pIrp->IoStatus.Status = status;
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 	return status;
+}
+
+VOID Dispatch::Register(IN PDRIVER_OBJECT pDriObj)
+{
+	for (int i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; i++)
+	{
+		pDriObj->MajorFunction[i] = DispatchDefault;
+	}
+
+	pDriObj->MajorFunction[IRP_MJ_CREATE] = DispatchCreate;
+	pDriObj->MajorFunction[IRP_MJ_CLOSE] = DispatchClose;
+	pDriObj->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DispatchIoctl;
 }

@@ -5,7 +5,6 @@
 
 typedef struct _HandlerContext
 {
-	PNTSTATUS pStatus;
 	PIO_STACK_LOCATION pIrpStack;
 	ULONG uIoControlCode;
 	PVOID pIoBuffer;
@@ -15,7 +14,10 @@ typedef struct _HandlerContext
 
 namespace DispatchHandler
 {
-
+	NTSTATUS Test(PHandlerContext hContext);
+	NTSTATUS Read(PHandlerContext hContext);
+	NTSTATUS Write(PHandlerContext hContext);
+	NTSTATUS ForceDelete(PHandlerContext hContext);
 }
 
 #endif // !_DISPATCH_HANDLER_H_
