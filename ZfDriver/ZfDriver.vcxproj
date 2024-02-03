@@ -18,6 +18,22 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="ZfDriver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="ZfDriver.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ZfDriver.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ZfDriver-R0\x64\Release\ZfDriver-R0.sys" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
