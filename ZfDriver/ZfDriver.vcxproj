@@ -19,11 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DriverController.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="ZfDriver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DriverController.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="ZfDriver.cpp" />

@@ -3,10 +3,15 @@
 
 void Utils::AlertError(const wchar_t* msg)
 {
-	MessageBox(NULL, msg, L"Error", MB_OK);
+	MessageBox(NULL, msg, L"ZfDriver Error", MB_OK);
 }
 
-bool Utils::ReleaseResource(unsigned int uResourceId, const wchar_t* szResourceType, const wchar_t* szFileName)
+bool Utils::ReleaseResource
+(
+	unsigned int uResourceId,
+	const wchar_t* szResourceType,
+	const wchar_t* szFileName
+)
 {
 	const wchar_t* msg = NULL;
 
@@ -43,7 +48,15 @@ bool Utils::ReleaseResource(unsigned int uResourceId, const wchar_t* szResourceT
 			msg = L"Lock Resource Error!";
 			break;
 		}
-		HANDLE hFile = CreateFile(szFileName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		HANDLE hFile = CreateFile
+		(
+			szFileName,
+			GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+			NULL,
+			CREATE_ALWAYS,
+			FILE_ATTRIBUTE_NORMAL,
+			NULL
+		);
 		if (hFile == NULL)
 		{
 			msg = L"Create File Error!";
@@ -66,5 +79,19 @@ bool Utils::ReleaseResource(unsigned int uResourceId, const wchar_t* szResourceT
 	{
 		Utils::AlertError(msg);
 		return false;
+	}
+}
+
+void Utils::GetAppPath(wchar_t* szCurFile)
+{
+	GetModuleFileName(0, szCurFile, MAX_PATH);
+	size_t i = wcslen(szCurFile) - 1;
+	for (; i > 0; --i)
+	{
+		if (szCurFile[i] == L'\\')
+		{
+			szCurFile[i + 1] = L'\0';
+			break;
+		}
 	}
 }

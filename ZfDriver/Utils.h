@@ -5,6 +5,7 @@ namespace Utils
 {
 	void AlertError(const wchar_t* msg);
 	bool ReleaseResource(unsigned int uResourceId, const wchar_t* szResourceType, const wchar_t* szFileName);
+	void GetAppPath(wchar_t* szCurFile);
 }
 
 #endif // !_UTILS_H_

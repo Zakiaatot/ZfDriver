@@ -29,8 +29,6 @@ private:
 	ZfDriver(const ZfDriver&&) = delete;
 	ZfDriver& operator=(const ZfDriver&) = delete;
 	ZfDriver& operator=(const ZfDriver&&) = delete;
-private:
-	bool installed_;
 
 public:
 	bool Install();
