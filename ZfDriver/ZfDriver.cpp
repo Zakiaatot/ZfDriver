@@ -8,17 +8,12 @@
 #define DRIVER_SYMLINK_NAME L"\\\\.\\ZfDriver"
 
 DriverController gDriverController;
-
-ZfDriver::ZfDriver()
-{
-}
-
-ZfDriver::~ZfDriver()
-{
-}
+bool gIsZfDriverInstalled = false;
 
 bool ZfDriver::Install()
 {
+	if (gIsZfDriverInstalled == true)
+		return true;
 	wchar_t sysPath[MAX_PATH] = { 0 };
 	Utils::GetAppPath(sysPath);
 	wcscat_s(sysPath, DRIVER_FILE_NAME);
@@ -31,12 +26,16 @@ bool ZfDriver::Install()
 	{
 		return false;
 	}
+	gIsZfDriverInstalled = true;
 	return true;
 }
 
 void ZfDriver::Uninstall()
 {
+	if (gIsZfDriverInstalled == false)
+		return;
 	gDriverController.Close();
 	gDriverController.Stop();
 	gDriverController.Uninstall();
+	gIsZfDriverInstalled = false;
 }

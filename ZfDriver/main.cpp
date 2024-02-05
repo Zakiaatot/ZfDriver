@@ -2,7 +2,7 @@
 
 int main(void)
 {
-	Singleton<ZfDriver>::GetInstance().Install();
-	Singleton<ZfDriver>::GetInstance().Uninstall();
+	ZfDriver::Install();
+	ZfDriver::Uninstall();
 	return 0;
 }
