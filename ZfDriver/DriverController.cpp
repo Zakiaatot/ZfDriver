@@ -18,9 +18,6 @@ DriverController::DriverController()
 
 DriverController::~DriverController()
 {
-	CloseServiceHandle(service_);
-	CloseServiceHandle(scManager_);
-	CloseHandle(driver_);
 }
 
 BOOL DriverController::Install(PCWSTR sysPath, PCWSTR serviceName, PCWSTR displayName)

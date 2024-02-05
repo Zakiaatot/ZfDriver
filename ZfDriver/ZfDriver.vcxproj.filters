@@ -18,13 +18,13 @@
     <ClInclude Include="ZfDriver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Utils.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="DriverController.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
