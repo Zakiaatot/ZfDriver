@@ -64,6 +64,7 @@ bool Utils::ReleaseResource
 		}
 		DWORD dwWriten = 0;
 		bool bRes = WriteFile(hFile, lpRes, dwSize, &dwWriten, NULL);
+		CloseHandle(hFile);
 		if (bRes == false || dwWriten <= 0)
 		{
 			msg = L"Write File Error!";
