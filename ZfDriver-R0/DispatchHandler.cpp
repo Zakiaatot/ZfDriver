@@ -1,5 +1,5 @@
-#include <windef.h>
 #include "DispatchHandler.h"
+#include <windef.h>
 
 // For Test
 // IN: DWORD num  OUT: DWORD num+1
