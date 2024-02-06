@@ -10,6 +10,11 @@
 #define IOCTL_CODE_FORCE_DELETE  CTL_CODE(FILE_DEVICE_UNKNOWN, 0x803, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 // Trans Struct
-
+struct IOCTL_TRANS_READ
+{
+	DWORD pid;
+	PVOID address;
+	DWORD size;
+};
 
 #endif // !_IOCTL_UTILS_H_

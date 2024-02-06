@@ -1,5 +1,6 @@
 #include "DispatchHandler.h"
-#include <windef.h>
+#include "IoctlUtils.h"
+#include "Utils.h"
 
 // For Test
 // IN: DWORD num  OUT: DWORD num+1
@@ -13,9 +14,21 @@ NTSTATUS DispatchHandler::Test(PHandlerContext hContext)
 	return STATUS_SUCCESS;
 }
 
+// Read Memory
+// IN: IOCTL_TRANS_READ (pid,address,size)  OUT: BYTE[] data
 NTSTATUS DispatchHandler::Read(PHandlerContext hContext)
 {
-	return STATUS_SUCCESS;
+	DbgPrint("[ZfDriver] Read");
+	IOCTL_TRANS_READ* trans = (IOCTL_TRANS_READ*)hContext->pIoBuffer;
+	if (Utils::MDLReadMemory(trans->pid, trans->address, trans->size, (BYTE*)hContext->pIoBuffer))
+	{
+		return STATUS_SUCCESS;
+	}
+	else
+	{
+		DbgPrint("[ZfDriver] Read Error! Pid:%d, Address:%lx, Size:%d ", trans->pid, trans->address, trans->size);
+		return STATUS_UNSUCCESSFUL;
+	}
 }
 
 NTSTATUS DispatchHandler::Write(PHandlerContext hContext)

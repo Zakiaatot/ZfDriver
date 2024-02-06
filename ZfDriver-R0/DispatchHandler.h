@@ -2,6 +2,7 @@
 #define _DISPATCH_HANDLER_H_
 
 #include <ntifs.h>
+#include <windef.h>
 
 typedef struct _HandlerContext
 {

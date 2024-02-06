@@ -41,9 +41,21 @@ VOID ZfDriver::Uninstall()
 	gIsZfDriverInstalled = FALSE;
 }
 
-DWORD ZfDriver::Test(DWORD num)
+DWORD ZfDriver::Test(IN DWORD num)
 {
+	if (gIsZfDriverInstalled == FALSE)
+		return num;
 	DWORD ret = num;
 	gDriverController.IoControl(IOCTL_CODE_TEST, &num, sizeof(DWORD), &ret, sizeof(DWORD), NULL);
 	return ret;
+}
+
+BOOL ZfDriver::ReadBytes(IN DWORD pid, IN DWORD64 address, IN DWORD size, INOUT BYTE* res)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_READ trans = { pid,(PVOID)address,size };
+	if (!gDriverController.IoControl(IOCTL_CODE_READ, &trans, sizeof(IOCTL_TRANS_READ), res, size, NULL))
+		return FALSE;
+	return TRUE;
 }
