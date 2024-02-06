@@ -5,6 +5,7 @@
 // IN: DWORD num  OUT: DWORD num+1
 NTSTATUS DispatchHandler::Test(PHandlerContext hContext)
 {
+	DbgPrint("[ZfDriver] Test");
 	DWORD num = 0;
 	memcpy(&num, hContext->pIoBuffer, sizeof(DWORD));
 	num++;

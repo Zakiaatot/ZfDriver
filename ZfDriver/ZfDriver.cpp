@@ -2,18 +2,19 @@
 #include "Utils.h"
 #include "Resource.h"
 #include "DriverController.h"
+#include "IoctlUtils.h"
 
 #define DRIVER_FILE_NAME L"ZfDriver-R0.sys"
 #define DRIVER_SERVICE_NAME L"ZfDriver"
 #define DRIVER_SYMLINK_NAME L"\\\\.\\ZfDriver"
 
 DriverController gDriverController;
-bool gIsZfDriverInstalled = false;
+BOOL gIsZfDriverInstalled = FALSE;
 
-bool ZfDriver::Install()
+BOOL ZfDriver::Install()
 {
-	if (gIsZfDriverInstalled == true)
-		return true;
+	if (gIsZfDriverInstalled == TRUE)
+		return TRUE;
 	wchar_t sysPath[MAX_PATH] = { 0 };
 	Utils::GetAppPath(sysPath);
 	wcscat_s(sysPath, DRIVER_FILE_NAME);
@@ -24,18 +25,25 @@ bool ZfDriver::Install()
 		!gDriverController.Open(DRIVER_SYMLINK_NAME)
 		)
 	{
-		return false;
+		return FALSE;
 	}
-	gIsZfDriverInstalled = true;
-	return true;
+	gIsZfDriverInstalled = TRUE;
+	return TRUE;
 }
 
-void ZfDriver::Uninstall()
+VOID ZfDriver::Uninstall()
 {
-	if (gIsZfDriverInstalled == false)
+	if (gIsZfDriverInstalled == FALSE)
 		return;
 	gDriverController.Close();
 	gDriverController.Stop();
 	gDriverController.Uninstall();
-	gIsZfDriverInstalled = false;
+	gIsZfDriverInstalled = FALSE;
+}
+
+DWORD ZfDriver::Test(DWORD num)
+{
+	DWORD ret = num;
+	gDriverController.IoControl(IOCTL_CODE_TEST, &num, sizeof(DWORD), &ret, sizeof(DWORD), NULL);
+	return ret;
 }

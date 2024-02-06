@@ -9,10 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="资源文件">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ZfDriver.h">
@@ -24,7 +20,7 @@
     <ClInclude Include="DriverController.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Resource.h">
+    <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,11 +37,12 @@
     <ClCompile Include="DriverController.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="IoctlUtils.h">
+      <Filter>头文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="ZfDriver.rc">
-      <Filter>资源文件</Filter>
-    </ResourceCompile>
+    <ResourceCompile Include="ZfDriver.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ZfDriver-R0\x64\Release\ZfDriver-R0.sys" />

@@ -1,10 +1,6 @@
 #include "DriverController.h"
 #include "Utils.h"
 
-inline static DWORD CtlCodeGen(DWORD lngFunction)
-{
-	return (FILE_DEVICE_UNKNOWN * 65536) | (FILE_ANY_ACCESS * 16384) | (lngFunction * 4) | METHOD_BUFFERED;
-}
 
 DriverController::DriverController()
 	:sysPath_(NULL),
@@ -150,7 +146,7 @@ BOOL DriverController::IoControl
 	BOOL res = DeviceIoControl
 	(
 		driver_,
-		CtlCodeGen(ioCode),
+		ioCode,
 		inBuff,
 		inBuffLen,
 		outBuff,

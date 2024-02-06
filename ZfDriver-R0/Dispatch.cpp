@@ -12,7 +12,7 @@ NTSTATUS DispatchDefault(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
 NTSTATUS DispatchCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-	DbgPrint("[ZfDriver] created once\n");
+	DbgPrint("[ZfDriver] Created\n");
 	pIrp->IoStatus.Status = STATUS_SUCCESS;
 	pIrp->IoStatus.Information = 0;
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
@@ -21,7 +21,7 @@ NTSTATUS DispatchCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
 NTSTATUS DispatchClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
-	DbgPrint("[ZfDriver] closed once\n");
+	DbgPrint("[ZfDriver] Closed\n");
 	pIrp->IoStatus.Status = STATUS_SUCCESS;
 	pIrp->IoStatus.Information = 0;
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
@@ -30,6 +30,7 @@ NTSTATUS DispatchClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 
 NTSTATUS DispatchIoctl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
+	DbgPrint("[ZfDriver] Ioctl\n");
 	NTSTATUS status = STATUS_INVALID_DEVICE_REQUEST;
 	PIO_STACK_LOCATION pIrpStack;
 	ULONG uIoControlCode;
