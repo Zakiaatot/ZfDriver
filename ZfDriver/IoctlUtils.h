@@ -17,4 +17,12 @@ struct IOCTL_TRANS_READ
 	DWORD size;
 };
 
+struct IOCTL_TRANS_WRITE
+{
+	DWORD pid;
+	PVOID address;
+	DWORD size;
+	BYTE data[0];
+};
+
 #endif // !_IOCTL_UTILS_H_

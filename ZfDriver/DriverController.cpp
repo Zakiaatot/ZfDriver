@@ -1,5 +1,6 @@
 #include "DriverController.h"
 #include "Utils.h"
+#include <iostream>
 
 
 DriverController::DriverController()
@@ -32,6 +33,8 @@ BOOL DriverController::Install(PCWSTR sysPath, PCWSTR serviceName, PCWSTR displa
 		}
 
 		// Create Service
+		int retryCount = 0;
+	CREATE:
 		service_ = CreateService
 		(
 			scManager_,
@@ -60,6 +63,16 @@ BOOL DriverController::Install(PCWSTR sysPath, PCWSTR serviceName, PCWSTR displa
 					Utils::AlertError(L"Open Service Error!");
 					break;
 				}
+				DeleteService(service_);
+				if (retryCount >= 3)
+				{
+					CloseServiceHandle(scManager_);
+					Utils::AlertError(L"Create Service Error!");
+					break;
+				}
+				else {
+					goto CREATE;
+				}
 			}
 			else
 			{
@@ -78,6 +91,7 @@ BOOL DriverController::Start()
 {
 	if (!StartService(service_, NULL, NULL))
 	{
+		std::cout << GetLastError() << std::endl;
 		Utils::AlertError(L"Start Driver Error!");
 		return false;
 	}

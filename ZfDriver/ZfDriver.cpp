@@ -50,12 +50,27 @@ DWORD ZfDriver::Test(IN DWORD num)
 	return ret;
 }
 
-BOOL ZfDriver::ReadBytes(IN DWORD pid, IN DWORD64 address, IN DWORD size, INOUT BYTE* res)
+BOOL ZfDriver::ReadBytes(IN DWORD pid, IN DWORD64 address, IN DWORD size, OUT BYTE* data)
 {
 	if (gIsZfDriverInstalled == FALSE)
 		return FALSE;
 	IOCTL_TRANS_READ trans = { pid,(PVOID)address,size };
-	if (!gDriverController.IoControl(IOCTL_CODE_READ, &trans, sizeof(IOCTL_TRANS_READ), res, size, NULL))
+	if (!gDriverController.IoControl(IOCTL_CODE_READ, &trans, sizeof(IOCTL_TRANS_READ), data, size, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::WriteBytes(IN DWORD pid, IN DWORD64 address, IN DWORD size, IN BYTE* data)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	BYTE buf[1024] = { 0 };
+	IOCTL_TRANS_WRITE* pTrans = (IOCTL_TRANS_WRITE*)buf;
+	pTrans->pid = pid;
+	pTrans->address = (PVOID)address;
+	pTrans->size = size;
+	memcpy(&(pTrans->data[0]), data, size);
+	if (!gDriverController.IoControl(IOCTL_CODE_WRITE, pTrans, sizeof(IOCTL_TRANS_WRITE) + size, NULL, 0, NULL))
 		return FALSE;
 	return TRUE;
 }

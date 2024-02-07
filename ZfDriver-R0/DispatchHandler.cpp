@@ -33,7 +33,17 @@ NTSTATUS DispatchHandler::Read(PHandlerContext hContext)
 
 NTSTATUS DispatchHandler::Write(PHandlerContext hContext)
 {
-	return STATUS_SUCCESS;
+	DbgPrint("[ZfDriver] Write");
+	IOCTL_TRANS_WRITE* trans = (IOCTL_TRANS_WRITE*)hContext->pIoBuffer;
+	if (Utils::MDLWriteMemory(trans->pid, trans->address, trans->size, &(trans->data[0])))
+	{
+		return STATUS_SUCCESS;
+	}
+	else
+	{
+		DbgPrint("[ZfDriver] Write Error! Pid:%d, Address:%lx, Size:%d ", trans->pid, trans->address, trans->size);
+		return STATUS_UNSUCCESSFUL;
+	}
 }
 
 NTSTATUS DispatchHandler::ForceDelete(PHandlerContext hContext)

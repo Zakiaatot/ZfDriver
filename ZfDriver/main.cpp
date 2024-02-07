@@ -10,10 +10,14 @@ int main(void)
 	std::cout << ZfDriver::Test(num) << std::endl;
 
 	// Read
-	ZfDriver::ReadBytes(4868, 0x000BF140, sizeof(DWORD), (BYTE*)&num);
+	ZfDriver::ReadBytes(5692, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
 	std::cout << num << std::endl;
 
 	// Write
+	num--;
+	ZfDriver::WriteBytes(5692, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
+	ZfDriver::ReadBytes(5692, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
+	std::cout << num << std::endl;
 
 	ZfDriver::Uninstall();
 	system("pause");
