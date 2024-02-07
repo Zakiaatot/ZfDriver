@@ -135,3 +135,12 @@ BOOL ZfDriver::WriteDouble(IN DWORD pid, IN DWORD64 address, IN DOUBLE data)
 {
 	return ZfDriver::WriteBytes(pid, address, sizeof(DOUBLE), (BYTE*)&data);
 }
+
+BOOL ZfDriver::ForceDeleteFile(IN PCWSTR filePath)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	if (!gDriverController.IoControl(IOCTL_CODE_FORCE_DELETE, (PVOID)filePath, (wcslen(filePath) + 1) * sizeof(WCHAR), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}

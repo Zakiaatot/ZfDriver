@@ -28,6 +28,8 @@ public:
 	static BOOL WriteLong(IN DWORD pid, IN DWORD64 address, IN LONGLONG data); // 写长整数
 	static BOOL WriteFloat(IN DWORD pid, IN DWORD64 address, IN FLOAT data); // 写小数
 	static BOOL WriteDouble(IN DWORD pid, IN DWORD64 address, IN DOUBLE data); // 写双精度小数
+	// Utils
+	static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath 为宽字符路径  例如 L"C:\\123.exe"
 };
 
 #endif // !_ZFDRIVER_H_

@@ -19,7 +19,8 @@ int main(void)
 	//ZfDriver::ReadBytes(5692, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
 	//std::cout << num << std::endl;
 
-	ZfDriver::WriteInt(17524, 0x0A9DE530, 999999);
+	// Force Delete File
+	ZfDriver::ForceDeleteFile(L"C:\\Users\\38463\\Desktop\\Project\\ZfDriver\\ZfDriver\\x64\\Release\\ZfDriver.exe");
 
 	ZfDriver::Uninstall();
 	system("pause");

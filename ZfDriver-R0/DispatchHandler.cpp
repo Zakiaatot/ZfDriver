@@ -48,5 +48,19 @@ NTSTATUS DispatchHandler::Write(PHandlerContext hContext)
 
 NTSTATUS DispatchHandler::ForceDelete(PHandlerContext hContext)
 {
-	return STATUS_SUCCESS;
+	DbgPrint("[ZfDriver] Force Delete");
+	WCHAR filePathBuf[MAX_PATH] = { 0 };
+	wcscat(filePathBuf, L"\\??\\");
+	wcscat(filePathBuf, (PCWCHAR)hContext->pIoBuffer);
+	UNICODE_STRING filePath;
+	RtlInitUnicodeString(&filePath, filePathBuf);
+	if (Utils::ForceDeleteFile(filePath))
+	{
+		return STATUS_SUCCESS;
+	}
+	else
+	{
+		DbgPrint("[ZfDriver] Force Delete Error! FilePath: %ls", filePathBuf);
+		return STATUS_UNSUCCESSFUL;
+	}
 }
