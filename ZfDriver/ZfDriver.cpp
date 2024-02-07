@@ -74,3 +74,64 @@ BOOL ZfDriver::WriteBytes(IN DWORD pid, IN DWORD64 address, IN DWORD size, IN BY
 		return FALSE;
 	return TRUE;
 }
+
+BOOL ZfDriver::ReadByte(IN DWORD pid, IN DWORD64 address, OUT BYTE* data)
+{
+	return ZfDriver::ReadBytes(pid, address, sizeof(BYTE), data);
+}
+
+BOOL ZfDriver::ReadShort(IN DWORD pid, IN DWORD64 address, OUT SHORT* data)
+{
+	return ZfDriver::ReadBytes(pid, address, sizeof(SHORT), (BYTE*)data);
+}
+
+BOOL ZfDriver::ReadInt(IN DWORD pid, IN DWORD64 address, OUT INT* data)
+{
+	return ZfDriver::ReadBytes(pid, address, sizeof(INT), (BYTE*)data);
+}
+
+BOOL ZfDriver::ReadLong(IN DWORD pid, IN DWORD64 address, OUT LONGLONG* data)
+{
+	return ZfDriver::ReadBytes(pid, address, sizeof(LONGLONG), (BYTE*)data);
+}
+
+BOOL ZfDriver::ReadFloat(IN DWORD pid, IN DWORD64 address, OUT FLOAT* data)
+{
+	return ZfDriver::ReadBytes(pid, address, sizeof(FLOAT), (BYTE*)data);
+}
+
+BOOL ZfDriver::ReadDouble(IN DWORD pid, IN DWORD64 address, OUT DOUBLE* data)
+{
+	return ZfDriver::ReadBytes(pid, address, sizeof(DOUBLE), (BYTE*)data);
+}
+
+
+BOOL ZfDriver::WriteByte(IN DWORD pid, IN DWORD64 address, IN BYTE data)
+{
+	return ZfDriver::WriteBytes(pid, address, sizeof(BYTE), &data);
+}
+
+BOOL ZfDriver::WriteShort(IN DWORD pid, IN DWORD64 address, IN SHORT data)
+{
+	return ZfDriver::WriteBytes(pid, address, sizeof(SHORT), (BYTE*)&data);
+}
+
+BOOL ZfDriver::WriteInt(IN DWORD pid, IN DWORD64 address, IN INT data)
+{
+	return ZfDriver::WriteBytes(pid, address, sizeof(INT), (BYTE*)&data);
+}
+
+BOOL ZfDriver::WriteLong(IN DWORD pid, IN DWORD64 address, IN LONGLONG data)
+{
+	return ZfDriver::WriteBytes(pid, address, sizeof(LONGLONG), (BYTE*)&data);
+}
+
+BOOL ZfDriver::WriteFloat(IN DWORD pid, IN DWORD64 address, IN FLOAT data)
+{
+	return ZfDriver::WriteBytes(pid, address, sizeof(FLOAT), (BYTE*)&data);
+}
+
+BOOL ZfDriver::WriteDouble(IN DWORD pid, IN DWORD64 address, IN DOUBLE data)
+{
+	return ZfDriver::WriteBytes(pid, address, sizeof(DOUBLE), (BYTE*)&data);
+}
