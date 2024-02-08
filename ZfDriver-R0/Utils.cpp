@@ -1,6 +1,12 @@
 #include <ntifs.h>
+#include "Peb.h"
 #include "Utils.h"
 
+
+extern "C" {
+	NTKERNELAPI PVOID NTAPI PsGetProcessPeb(_In_ PEPROCESS Process);
+	NTKERNELAPI PVOID NTAPI PsGetProcessWow64Process(_In_ PEPROCESS Process);
+}
 
 BOOL Utils::MDLReadMemory(IN DWORD pid, IN PVOID address, IN DWORD size, OUT BYTE* data)
 {
@@ -97,7 +103,7 @@ BOOL Utils::ForceDeleteFile(IN UNICODE_STRING pwzFileName)
 	HANDLE hFile = NULL;
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	IO_STATUS_BLOCK iosta;
-	PDEVICE_OBJECT DeviceObject = NULL;
+	PDEVICE_OBJECT deviceObject = NULL;
 	PVOID pHandleFileObject = NULL;
 
 	// 判断中断等级不大于0
@@ -136,7 +142,7 @@ BOOL Utils::ForceDeleteFile(IN UNICODE_STRING pwzFileName)
 			CreateFileTypeNone,
 			0,
 			IO_IGNORE_SHARE_ACCESS_CHECK,
-			DeviceObject);
+			deviceObject);
 		if (!NT_SUCCESS(status))
 		{
 			return FALSE;
@@ -178,4 +184,85 @@ BOOL Utils::ForceDeleteFile(IN UNICODE_STRING pwzFileName)
 		}
 	}
 	return TRUE;
+}
+
+DWORD64 Utils::GetModuleBaseWow64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName)
+{
+	DWORD64 baseAddr = 0;
+	KAPC_STATE kapc = { 0 };
+	KeStackAttachProcess(pEProcess, &kapc);
+	PPEB32 pPeb = (PPEB32)PsGetProcessWow64Process(pEProcess);
+	if (pPeb == NULL || pPeb->Ldr == 0)
+	{
+		KeUnstackDetachProcess(&kapc);
+		return 0;
+	}
+
+	for (
+		PLIST_ENTRY32 pListEntry = (PLIST_ENTRY32)((PPEB_LDR_DATA32)pPeb->Ldr)->InLoadOrderModuleList.Flink;
+		pListEntry != &((PPEB_LDR_DATA32)pPeb->Ldr)->InLoadOrderModuleList;
+		pListEntry = (PLIST_ENTRY32)pListEntry->Flink
+		)
+	{
+		PLDR_DATA_TABLE_ENTRY32 ldrEntry = CONTAINING_RECORD(pListEntry, LDR_DATA_TABLE_ENTRY32, InLoadOrderLinks);
+
+		if (ldrEntry->BaseDllName.Buffer == NULL)
+		{
+			continue;
+		}
+
+		// 当前模块名链表
+		UNICODE_STRING usCurrentName = { 0 };
+		RtlInitUnicodeString(&usCurrentName, (PWCHAR)ldrEntry->BaseDllName.Buffer);
+
+		// 比较模块名是否一致
+		if (RtlEqualUnicodeString(&moduleName, &usCurrentName, TRUE))
+		{
+			baseAddr = (DWORD64)ldrEntry->DllBase;
+			KeUnstackDetachProcess(&kapc);
+			return baseAddr;
+		}
+	}
+	KeUnstackDetachProcess(&kapc);
+	return 0;
+}
+
+DWORD64 Utils::GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName)
+{
+	ULONGLONG baseAddr = 0;
+	KAPC_STATE kapc = { 0 };
+	KeStackAttachProcess(pEProcess, &kapc);
+	PPEB64 pPeb = (PPEB64)PsGetProcessPeb(pEProcess);
+	if (pPeb == NULL || pPeb->Ldr == NULL)
+	{
+		KeUnstackDetachProcess(&kapc);
+		return 0;
+	}
+
+	for (
+		PLIST_ENTRY pListEntry = pPeb->Ldr->InLoadOrderModuleList.Flink;
+		pListEntry != &(pPeb->Ldr->InLoadOrderModuleList);
+		pListEntry = pListEntry->Flink
+		)
+	{
+		PLDR_DATA_TABLE_ENTRY ldrEntry = CONTAINING_RECORD(pListEntry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+
+		if (ldrEntry->BaseDllName.Buffer == NULL)
+		{
+			continue;
+		}
+
+		// 当前模块名链表
+		UNICODE_STRING usCurrentName = { 0 };
+		RtlInitUnicodeString(&usCurrentName, (PWCHAR)ldrEntry->BaseDllName.Buffer);
+
+		if (RtlEqualUnicodeString(&moduleName, &usCurrentName, TRUE))
+		{
+			baseAddr = (DWORD64)ldrEntry->DllBase;
+			KeUnstackDetachProcess(&kapc);
+			return baseAddr;
+		}
+	}
+	KeUnstackDetachProcess(&kapc);
+	return 0;
 }

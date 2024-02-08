@@ -124,6 +124,7 @@
     <ClInclude Include="Dispatch.h" />
     <ClInclude Include="DispatchHandler.h" />
     <ClInclude Include="IoctlUtils.h" />
+    <ClInclude Include="Peb.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
