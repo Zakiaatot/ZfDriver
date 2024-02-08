@@ -140,7 +140,7 @@ BOOL ZfDriver::ForceDeleteFile(IN PCWSTR filePath)
 {
 	if (gIsZfDriverInstalled == FALSE)
 		return FALSE;
-	if (!gDriverController.IoControl(IOCTL_CODE_FORCE_DELETE, (PVOID)filePath, (wcslen(filePath) + 1) * sizeof(WCHAR), NULL, 0, NULL))
+	if (!gDriverController.IoControl(IOCTL_CODE_FORCE_DELETE_FILE, (PVOID)filePath, (wcslen(filePath) + 1) * sizeof(WCHAR), NULL, 0, NULL))
 		return FALSE;
 	return TRUE;
 }

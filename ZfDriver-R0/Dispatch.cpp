@@ -67,8 +67,11 @@ NTSTATUS DispatchIoctl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 	case IOCTL_CODE_WRITE:
 		status = DispatchHandler::Write(&handlerContext);
 		break;
-	case IOCTL_CODE_FORCE_DELETE:
-		status = DispatchHandler::ForceDelete(&handlerContext);
+	case IOCTL_CODE_FORCE_DELETE_FILE:
+		status = DispatchHandler::ForceDeleteFile(&handlerContext);
+		break;
+	case IOCTL_CODE_GET_MODULE_BASE:
+		status = DispatchHandler::GetModuleBase(&handlerContext);
 		break;
 	}
 

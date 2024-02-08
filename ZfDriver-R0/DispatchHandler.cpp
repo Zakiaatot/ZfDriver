@@ -46,9 +46,9 @@ NTSTATUS DispatchHandler::Write(PHandlerContext hContext)
 	}
 }
 
-NTSTATUS DispatchHandler::ForceDelete(PHandlerContext hContext)
+NTSTATUS DispatchHandler::ForceDeleteFile(PHandlerContext hContext)
 {
-	DbgPrint("[ZfDriver] Force Delete");
+	DbgPrint("[ZfDriver] Force Delete File");
 	WCHAR filePathBuf[MAX_PATH] = { 0 };
 	wcscat(filePathBuf, L"\\??\\");
 	wcscat(filePathBuf, (PCWCHAR)hContext->pIoBuffer);
@@ -60,7 +60,38 @@ NTSTATUS DispatchHandler::ForceDelete(PHandlerContext hContext)
 	}
 	else
 	{
-		DbgPrint("[ZfDriver] Force Delete Error! FilePath: %ls", filePathBuf);
+		DbgPrint("[ZfDriver] Force Delete File Error! FilePath: %ls", filePathBuf);
 		return STATUS_UNSUCCESSFUL;
 	}
+}
+
+NTSTATUS DispatchHandler::GetModuleBase(PHandlerContext hContext)
+{
+	DbgPrint("[ZfDriver] Get Module Base");
+	IOCTL_TRANS_GET_MODULE_BASE* trans = (IOCTL_TRANS_GET_MODULE_BASE*)hContext->pIoBuffer;
+	do
+	{
+		PEPROCESS pEProcess = NULL;
+		PsLookupProcessByProcessId((HANDLE)trans->pid, &pEProcess);
+		if (pEProcess == NULL)
+			break;
+
+		DWORD64 base = 0;
+		UNICODE_STRING moduleName;
+		RtlInitUnicodeString(&moduleName, (PWCHAR)trans->moduleName);
+		base = Utils::GetModuleBase64(pEProcess, moduleName);
+		if (base != 0)
+		{
+			*(PDWORD64)(hContext->pIoBuffer) = base;
+			return STATUS_SUCCESS;
+		}
+		base = Utils::GetModuleBaseWow64(pEProcess, moduleName);
+		if (base != 0)
+		{
+			*(PDWORD64)(hContext->pIoBuffer) = base;
+			return STATUS_SUCCESS;
+		}
+	} while (false);
+	DbgPrint("[ZfDriver] Get Module Base Error! Pid:%d, ModuleName:%ls ", trans->pid, trans->moduleName);
+	return STATUS_UNSUCCESSFUL;
 }

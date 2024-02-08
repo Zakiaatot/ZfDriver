@@ -18,7 +18,8 @@ namespace DispatchHandler
 	NTSTATUS Test(PHandlerContext hContext);
 	NTSTATUS Read(PHandlerContext hContext);
 	NTSTATUS Write(PHandlerContext hContext);
-	NTSTATUS ForceDelete(PHandlerContext hContext);
+	NTSTATUS ForceDeleteFile(PHandlerContext hContext);
+	NTSTATUS GetModuleBase(PHandlerContext hContext);
 }
 
 #endif // !_DISPATCH_HANDLER_H_
