@@ -79,13 +79,13 @@ NTSTATUS DispatchHandler::GetModuleBase(PHandlerContext hContext)
 		DWORD64 base = 0;
 		UNICODE_STRING moduleName;
 		RtlInitUnicodeString(&moduleName, (PWCHAR)trans->moduleName);
-		base = Utils::GetModuleBase64(pEProcess, moduleName);
+		base = Utils::GetModuleBaseWow64(pEProcess, moduleName);
 		if (base != 0)
 		{
 			*(PDWORD64)(hContext->pIoBuffer) = base;
 			return STATUS_SUCCESS;
 		}
-		base = Utils::GetModuleBaseWow64(pEProcess, moduleName);
+		base = Utils::GetModuleBase64(pEProcess, moduleName);
 		if (base != 0)
 		{
 			*(PDWORD64)(hContext->pIoBuffer) = base;

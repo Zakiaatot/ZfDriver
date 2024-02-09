@@ -6,8 +6,8 @@ int main(void)
 	ZfDriver::Install();
 
 	// Test
-	DWORD num = 1;
-	std::cout << ZfDriver::Test(num) << std::endl;
+	//DWORD num = 1;
+	//std::cout << ZfDriver::Test(num) << std::endl;
 
 	//// Read
 	//ZfDriver::ReadBytes(5692, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
@@ -20,7 +20,16 @@ int main(void)
 	//std::cout << num << std::endl;
 
 	// Force Delete File
-	ZfDriver::ForceDeleteFile(L"C:\\Users\\38463\\Desktop\\Project\\ZfDriver\\ZfDriver\\x64\\Release\\ZfDriver.exe");
+	//ZfDriver::ForceDeleteFile(L"C:\\Users\\38463\\Desktop\\Project\\ZfDriver\\ZfDriver\\x64\\Release\\ZfDriver.exe");
+
+	// Get Module Base
+	int pid = 0;
+	while (true)
+	{
+		std::cout << "Pid: ";
+		std::cin >> pid;
+		std::cout << std::hex << ZfDriver::GetModuleBase(pid, L"ntdll.dll") << std::endl;
+	}
 
 	ZfDriver::Uninstall();
 	system("pause");

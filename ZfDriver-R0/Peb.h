@@ -115,6 +115,33 @@ typedef struct _PEB64
 	ULONG64 ApiSetMap;
 } PEB64, * PPEB64;
 
+typedef struct _LDR_DATA_TABLE_ENTRY {
+	LIST_ENTRY InLoadOrderLinks;
+	LIST_ENTRY InMemoryOrderLinks;
+	LIST_ENTRY InInitializationOrderLinks;
+	PVOID DllBase;
+	PVOID EntryPoint;
+	ULONG SizeOfImage;
+	UNICODE_STRING FullDllName;
+	UNICODE_STRING BaseDllName;
+	ULONG Flags;
+	USHORT LoadCount;
+	USHORT TlsIndex;
+	LIST_ENTRY HashLinks;
+	PVOID SectionPointer;
+	ULONG CheckSum;
+	ULONG TimeDateStamp;
+	PVOID LoadedImports;
+	PVOID EntryPointActivationContext;
+	PVOID PatchInformation;
+	LIST_ENTRY ForwarderLinks;
+	LIST_ENTRY ServiceTagLinks;
+	LIST_ENTRY StaticLinks;
+	PVOID ContextInformation;
+	PVOID OriginalBase;
+	LARGE_INTEGER LoadTime;
+} LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
+
 #pragma pack(4)
 typedef struct _PEB32
 {
@@ -176,31 +203,4 @@ typedef struct _LDR_DATA_TABLE_ENTRY32
 	ULONG EntryPointActivationContext;
 	ULONG PatchInformation;
 } LDR_DATA_TABLE_ENTRY32, * PLDR_DATA_TABLE_ENTRY32;
-
-typedef struct _LDR_DATA_TABLE_ENTRY {
-	LIST_ENTRY InLoadOrderLinks;
-	LIST_ENTRY InMemoryOrderLinks;
-	LIST_ENTRY InInitializationOrderLinks;
-	PVOID DllBase;
-	PVOID EntryPoint;
-	ULONG SizeOfImage;
-	UNICODE_STRING FullDllName;
-	UNICODE_STRING BaseDllName;
-	ULONG Flags;
-	USHORT LoadCount;
-	USHORT TlsIndex;
-	LIST_ENTRY HashLinks;
-	PVOID SectionPointer;
-	ULONG CheckSum;
-	ULONG TimeDateStamp;
-	PVOID LoadedImports;
-	PVOID EntryPointActivationContext;
-	PVOID PatchInformation;
-	LIST_ENTRY ForwarderLinks;
-	LIST_ENTRY ServiceTagLinks;
-	LIST_ENTRY StaticLinks;
-	PVOID ContextInformation;
-	PVOID OriginalBase;
-	LARGE_INTEGER LoadTime;
-} LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
 #pragma pack()

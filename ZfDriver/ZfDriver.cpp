@@ -144,3 +144,24 @@ BOOL ZfDriver::ForceDeleteFile(IN PCWSTR filePath)
 		return FALSE;
 	return TRUE;
 }
+
+DWORD64 ZfDriver::GetModuleBase(IN DWORD pid, IN PCWSTR moduleName)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return 0;
+	DWORD64 base = 0;
+	BYTE buf[1024] = { 0 };
+	IOCTL_TRANS_GET_MODULE_BASE* pTrans = (IOCTL_TRANS_GET_MODULE_BASE*)buf;
+	pTrans->pid = pid;
+	memcpy(pTrans->moduleName, moduleName, (wcslen(moduleName) + 1) * sizeof(WCHAR));
+	gDriverController.IoControl
+	(
+		IOCTL_CODE_GET_MODULE_BASE,
+		pTrans,
+		sizeof(IOCTL_TRANS_GET_MODULE_BASE) + (wcslen(moduleName) + 1) * sizeof(WCHAR),
+		&base,
+		sizeof(DWORD64),
+		NULL
+	);
+	return base;
+}
