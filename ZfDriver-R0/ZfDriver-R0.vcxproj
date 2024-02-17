@@ -117,6 +117,7 @@
     <ClCompile Include="Dispatch.cpp" />
     <ClCompile Include="DispatchHandler.cpp" />
     <ClCompile Include="Driver.cpp" />
+    <ClCompile Include="KM.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -124,6 +125,7 @@
     <ClInclude Include="Dispatch.h" />
     <ClInclude Include="DispatchHandler.h" />
     <ClInclude Include="IoctlUtils.h" />
+    <ClInclude Include="KM.h" />
     <ClInclude Include="Peb.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

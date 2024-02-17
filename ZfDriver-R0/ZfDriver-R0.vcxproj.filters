@@ -39,6 +39,9 @@
     <ClCompile Include="Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="KM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Dispatch.h">
@@ -57,6 +60,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Peb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

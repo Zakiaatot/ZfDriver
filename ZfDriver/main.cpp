@@ -28,7 +28,9 @@ int main(void)
 	{
 		std::cout << "Pid: ";
 		std::cin >> pid;
-		std::cout << std::hex << ZfDriver::GetModuleBase(pid, L"ntdll.dll") << std::endl;
+		if (pid == 0)
+			break;
+		std::cout << std::hex << ZfDriver::GetModuleBase(pid, L"cshell_x64.dll") << std::endl;
 	}
 
 	ZfDriver::Uninstall();

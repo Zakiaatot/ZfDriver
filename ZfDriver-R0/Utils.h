@@ -10,6 +10,7 @@ namespace Utils
 	BOOL ForceDeleteFile(IN UNICODE_STRING pwzFileName);
 	DWORD64 GetModuleBaseWow64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName);
 	DWORD64 GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName);
+	VOID MouseMove(IN DWORD x, IN DWORD y);
 }
 
 #endif // !_UTILS_H_

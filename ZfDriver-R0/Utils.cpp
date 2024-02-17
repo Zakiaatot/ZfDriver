@@ -266,4 +266,3 @@ DWORD64 Utils::GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleN
 	KeUnstackDetachProcess(&kapc);
 	return 0;
 }
-
