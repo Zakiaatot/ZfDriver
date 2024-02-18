@@ -275,7 +275,7 @@ BOOL ZfDriver::MouseMoveAbsolute(LONG dx, LONG dy)
 	IOCTL_TRANS_MOU  trans = { 0 };
 	trans.Flags = 1;
 	trans.LastX = dx * 0xffff / GetSystemMetrics(SM_CXSCREEN);
-	trans.LastY = dy * 0xffff / GetSystemMetrics(SM_CXSCREEN);
+	trans.LastY = dy * 0xffff / GetSystemMetrics(SM_CYSCREEN);
 	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
 		return FALSE;
 	return TRUE;

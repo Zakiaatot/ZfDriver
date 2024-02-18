@@ -34,7 +34,8 @@ int main(void)
 	//}
 
 	// Keyboard and Mouse
-	ZfDriver::MouseRightButtonDown();
+	//ZfDriver::MouseRightButtonDown();
+	ZfDriver::MouseMoveAbsolute(100, 600);
 	ZfDriver::KeyDown(0x14); // 0x14: Caps lock
 
 	ZfDriver::Uninstall();
