@@ -1,6 +1,7 @@
 #include "DispatchHandler.h"
 #include "IoctlUtils.h"
 #include "Utils.h"
+#include "KM.h"
 
 // For Test
 // IN: DWORD num  OUT: DWORD num+1
@@ -94,4 +95,31 @@ NTSTATUS DispatchHandler::GetModuleBase(PHandlerContext hContext)
 	} while (false);
 	DbgPrint("[ZfDriver] Get Module Base Error! Pid:%d, ModuleName:%ls ", trans->pid, trans->moduleName);
 	return STATUS_UNSUCCESSFUL;
+}
+
+
+NTSTATUS DispatchHandler::KBD(PHandlerContext hContext)
+{
+	DbgPrint("[ZfDriver] KBD");
+	IOCTL_TRANS_KBD* pTransStart = (IOCTL_TRANS_KBD*)hContext->pIoBuffer;
+	IOCTL_TRANS_KBD* pTransEnd = pTransStart + 1;
+	ULONG inputDataConsumed;
+	KM::gKoMCallBack.KeyboardClassServiceCallback(KM::gKoMCallBack.KdbDeviceObject,
+		(KM::PKEYBOARD_INPUT_DATA)pTransStart,
+		(KM::PKEYBOARD_INPUT_DATA)pTransEnd,
+		&inputDataConsumed);
+	return STATUS_SUCCESS;
+}
+
+NTSTATUS DispatchHandler::MOU(PHandlerContext hContext)
+{
+	DbgPrint("[ZfDriver] MOU");
+	IOCTL_TRANS_MOU* pTransStart = (IOCTL_TRANS_MOU*)hContext->pIoBuffer;
+	IOCTL_TRANS_MOU* pTransEnd = pTransStart + 1;
+	ULONG inputDataConsumed;
+	KM::gKoMCallBack.MouseClassServiceCallback(KM::gKoMCallBack.KdbDeviceObject,
+		(KM::PMOUSE_INPUT_DATA)pTransStart,
+		(KM::PMOUSE_INPUT_DATA)pTransEnd,
+		&inputDataConsumed);
+	return STATUS_SUCCESS;
 }

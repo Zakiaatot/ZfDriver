@@ -73,6 +73,12 @@ NTSTATUS DispatchIoctl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 	case IOCTL_CODE_GET_MODULE_BASE:
 		status = DispatchHandler::GetModuleBase(&handlerContext);
 		break;
+	case IOCTL_CODE_KBD:
+		status = DispatchHandler::KBD(&handlerContext);
+		break;
+	case IOCTL_CODE_MOU:
+		status = DispatchHandler::MOU(&handlerContext);
+		break;
 	}
 
 	// Judge Success Or Failed
