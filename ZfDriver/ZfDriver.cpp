@@ -165,3 +165,118 @@ DWORD64 ZfDriver::GetModuleBase(IN DWORD pid, IN PCWSTR moduleName)
 	);
 	return base;
 }
+
+BOOL ZfDriver::KeyDown(IN USHORT keyCode)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_KBD  trans = { 0 };
+	trans.MakeCode = (USHORT)MapVirtualKey(keyCode, 0);
+	if (!gDriverController.IoControl(IOCTL_CODE_KBD, (PVOID)&trans, sizeof(IOCTL_TRANS_KBD), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::keyUp(IN USHORT keyCode)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_KBD  trans = { 0 };
+	trans.MakeCode = (USHORT)MapVirtualKey(keyCode, 0);
+	trans.Flags = 1;
+	if (!gDriverController.IoControl(IOCTL_CODE_KBD, (PVOID)&trans, sizeof(IOCTL_TRANS_KBD), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::MouseLeftButtonDown()
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_MOU  trans = { 0 };
+	trans.ButtonFlags = 0x0001;
+	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::MouseLeftButtonUp()
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_MOU  trans = { 0 };
+	trans.ButtonFlags = 0x0002;
+	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::MouseRightButtonDown()
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_MOU  trans = { 0 };
+	trans.ButtonFlags = 0x0004;
+	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::MouseRightButtonUp()
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_MOU  trans = { 0 };
+	trans.ButtonFlags = 0x0008;
+	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::MouseMiddleButtonDown()
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_MOU  trans = { 0 };
+	trans.ButtonFlags = 0x0010;
+	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::MouseMiddleButtonUp()
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_MOU  trans = { 0 };
+	trans.ButtonFlags = 0x0020;
+	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::MouseMoveRelative(LONG dx, LONG dy)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_MOU  trans = { 0 };
+	trans.Flags = 0;
+	trans.LastX = dx;
+	trans.LastY = dy;
+	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::MouseMoveAbsolute(LONG dx, LONG dy)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	IOCTL_TRANS_MOU  trans = { 0 };
+	trans.Flags = 1;
+	trans.LastX = dx * 0xffff / GetSystemMetrics(SM_CXSCREEN);
+	trans.LastY = dy * 0xffff / GetSystemMetrics(SM_CXSCREEN);
+	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}

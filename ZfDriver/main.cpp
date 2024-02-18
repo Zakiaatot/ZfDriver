@@ -23,15 +23,18 @@ int main(void)
 	//ZfDriver::ForceDeleteFile(L"C:\\Users\\38463\\Desktop\\Project\\ZfDriver\\ZfDriver\\x64\\Release\\ZfDriver.exe");
 
 	// Get Module Base
-	int pid = 0;
-	while (true)
-	{
-		std::cout << "Pid: ";
-		std::cin >> pid;
-		if (pid == 0)
-			break;
-		std::cout << std::hex << ZfDriver::GetModuleBase(pid, L"cshell_x64.dll") << std::endl;
-	}
+	//int pid = 0;
+	//while (true)
+	//{
+	//	std::cout << "Pid: ";
+	//	std::cin >> pid;
+	//	if (pid == 0)
+	//		break;
+	//	std::cout << std::hex << ZfDriver::GetModuleBase(pid, L"ntdll.dll") << std::endl;
+	//}
+
+	// Keyboard and Mouse
+	ZfDriver::MouseMoveRelative(10, 20);
 
 	ZfDriver::Uninstall();
 	system("pause");
