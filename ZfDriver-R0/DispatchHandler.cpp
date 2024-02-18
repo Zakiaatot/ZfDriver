@@ -117,7 +117,7 @@ NTSTATUS DispatchHandler::MOU(PHandlerContext hContext)
 	IOCTL_TRANS_MOU* pTransStart = (IOCTL_TRANS_MOU*)hContext->pIoBuffer;
 	IOCTL_TRANS_MOU* pTransEnd = pTransStart + 1;
 	ULONG inputDataConsumed;
-	KM::gKoMCallBack.MouseClassServiceCallback(KM::gKoMCallBack.KdbDeviceObject,
+	KM::gKoMCallBack.MouseClassServiceCallback(KM::gKoMCallBack.MouDeviceObject,
 		(KM::PMOUSE_INPUT_DATA)pTransStart,
 		(KM::PMOUSE_INPUT_DATA)pTransEnd,
 		&inputDataConsumed);

@@ -34,7 +34,7 @@ int main(void)
 	//}
 
 	// Keyboard and Mouse
-	ZfDriver::MouseMoveRelative(10, 20);
+	ZfDriver::MouseRightButtonDown();
 
 	ZfDriver::Uninstall();
 	system("pause");
