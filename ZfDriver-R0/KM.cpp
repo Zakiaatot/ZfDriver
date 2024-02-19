@@ -49,7 +49,7 @@ NTSTATUS  KM::searchMouServiceCallBack(IN PDRIVER_OBJECT driverObject)
 	else
 	{
 		ObDereferenceObject(kbd8042DriverObject);
-		DbgPrint("get the PS/2 Mouse Object\n");
+		DbgPrint("[ZfDriver] Get the PS/2 Mouse Object\n");
 	}
 	//如果两个设备都没有找到  
 	if (!kbd8042DriverObject && !kbdhidDriverObject)

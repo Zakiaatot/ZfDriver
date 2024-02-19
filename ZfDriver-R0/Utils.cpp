@@ -229,7 +229,7 @@ DWORD64 Utils::GetModuleBaseWow64(IN PEPROCESS pEProcess, IN UNICODE_STRING modu
 
 DWORD64 Utils::GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName)
 {
-	ULONGLONG baseAddr = 0;
+	DWORDLONG baseAddr = 0;
 	KAPC_STATE kapc = { 0 };
 	KeStackAttachProcess(pEProcess, &kapc);
 	PPEB64 pPeb = (PPEB64)PsGetProcessPeb(pEProcess);
@@ -267,6 +267,47 @@ DWORD64 Utils::GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleN
 	return 0;
 }
 
+DWORD FindEprocessPidOffset() {
+	DWORD pidOfs = 0; // The offset we're looking for
+	int idx = 0;                // Index 
+	DWORD pids[3];				// List of PIDs for our 3 processes
+	PEPROCESS eprocs[3];		// Process list, will contain 3 processes
+
+	//Select 3 process PIDs and get their EPROCESS Pointer
+	for (int i = 16; idx < 3; i += 4)
+	{
+		if (NT_SUCCESS(PsLookupProcessByProcessId((HANDLE)i, &eprocs[idx])))
+		{
+			pids[idx] = i;
+			idx++;
+		}
+	}
+
+	/*
+	Go through the EPROCESS structure and look for the PID
+	we can start at 0x20 because UniqueProcessId should
+	not be in the first 0x20 bytes,
+	also we should stop after 0x300 bytes with no success
+	*/
+
+	for (int i = 0x20; i < 0x300; i += 4)
+	{
+		if ((*(DWORD*)((UCHAR*)eprocs[0] + i) == pids[0])
+			&& (*(DWORD*)((UCHAR*)eprocs[1] + i) == pids[1])
+			&& (*(DWORD*)((UCHAR*)eprocs[2] + i) == pids[2]))
+		{
+			pidOfs = i;
+			break;
+		}
+	}
+
+	ObDereferenceObject(eprocs[0]);
+	ObDereferenceObject(eprocs[1]);
+	ObDereferenceObject(eprocs[2]);
+	DbgPrint("[ZfDriver] Activeprocesslinks Offset: 0x%x", pidOfs);
+	return pidOfs;
+}
+
 BOOL Utils::ProcessHide(IN DWORD pid)
 {
 	PEPROCESS pEProcess = NULL;
@@ -278,7 +319,8 @@ BOOL Utils::ProcessHide(IN DWORD pid)
 	}
 
 	KIRQL oldIrql;
-	PLIST_ENTRY ListEntry = (PLIST_ENTRY)((ULONG64)pEProcess + 0x448);
+	static DWORD offset = FindEprocessPidOffset();
+	PLIST_ENTRY ListEntry = (PLIST_ENTRY)((DWORD64)pEProcess + offset);
 	oldIrql = KeRaiseIrqlToDpcLevel();
 	if (ListEntry->Flink != ListEntry &&
 		ListEntry->Blink != ListEntry &&
