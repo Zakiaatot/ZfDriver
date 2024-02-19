@@ -415,6 +415,7 @@ BOOL Utils::ProcessHide(IN DWORD pid)
 	}
 	miProcessLoaderEntry(listEntry, 0);
 	// Replace by MiProcessLoaderEntry
+	// ·ÀÖ¹À¶ÆÁ
 	//listEntry->Flink->Blink = listEntry->Blink;
 	//listEntry->Blink->Flink = listEntry->Flink;
 	//listEntry->Flink = listEntry;
