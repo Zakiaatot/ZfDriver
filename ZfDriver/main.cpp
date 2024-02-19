@@ -35,8 +35,19 @@ int main(void)
 
 	// Keyboard and Mouse
 	//ZfDriver::MouseRightButtonDown();
-	ZfDriver::MouseMoveAbsolute(100, 600);
-	ZfDriver::KeyDown(0x14); // 0x14: Caps lock
+	//ZfDriver::MouseMoveAbsolute(100, 600);
+	//ZfDriver::KeyDown(0x14); // 0x14: Caps lock
+
+	// Process Hide
+	int pid = 0;
+	while (true)
+	{
+		std::cout << "Pid: ";
+		std::cin >> pid;
+		if (pid == 0)
+			break;
+		std::cout << ZfDriver::ProcessHide(pid);
+	}
 
 	ZfDriver::Uninstall();
 	system("pause");

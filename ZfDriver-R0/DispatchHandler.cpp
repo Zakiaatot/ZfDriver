@@ -123,3 +123,13 @@ NTSTATUS DispatchHandler::MOU(PHandlerContext hContext)
 		&inputDataConsumed);
 	return STATUS_SUCCESS;
 }
+
+NTSTATUS DispatchHandler::ProcessHide(PHandlerContext hContext)
+{
+	DbgPrint("[ZfDriver] Process Hide");
+	DWORD pid = *(PDWORD)hContext->pIoBuffer;
+	if (Utils::ProcessHide(pid))
+		return STATUS_SUCCESS;
+	else
+		return STATUS_UNSUCCESSFUL;
+}

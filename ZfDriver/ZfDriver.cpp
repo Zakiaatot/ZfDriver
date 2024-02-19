@@ -280,3 +280,12 @@ BOOL ZfDriver::MouseMoveAbsolute(LONG dx, LONG dy)
 		return FALSE;
 	return TRUE;
 }
+
+BOOL ZfDriver::ProcessHide(IN DWORD pid)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	if (!gDriverController.IoControl(IOCTL_CODE_PROCESS_HIDE, (PVOID)&pid, sizeof(DWORD), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}

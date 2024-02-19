@@ -79,6 +79,9 @@ NTSTATUS DispatchIoctl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 	case IOCTL_CODE_MOU:
 		status = DispatchHandler::MOU(&handlerContext);
 		break;
+	case IOCTL_CODE_PROCESS_HIDE:
+		status = DispatchHandler::ProcessHide(&handlerContext);
+		break;
 	}
 
 	// Judge Success Or Failed
