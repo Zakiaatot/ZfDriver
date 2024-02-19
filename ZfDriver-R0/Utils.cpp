@@ -300,7 +300,10 @@ DWORD FindEprocessPidOffset() {
 			&& (*(DWORD*)((UCHAR*)eprocs[1] + i) == pids[1])
 			&& (*(DWORD*)((UCHAR*)eprocs[2] + i) == pids[2]))
 		{
-			pidOfs = i;
+			//+ 0x440 UniqueProcessId  : Ptr64 Void
+			//+ 0x448 ActiveProcessLinks : _LIST_ENTRY
+			// UniqueProcessId next is ActiveProcessLinks 
+			pidOfs = i + sizeof(PVOID);
 			break;
 		}
 	}
