@@ -1,6 +1,9 @@
 # ZfDriver
 
-Windows 平台驱动级内存读写库，方便无痕游戏辅助开发
+Windows X64 平台驱动级内存读写库，方便无痕游戏辅助开发
+
+目前支持：Win10 ~ Latest
+
 **Warning**: Progressing Project...
 
 [API](https://github.com/Zakiaatot/ZfDriver/blob/main/ZfDriver/ZfDriver.h):
@@ -39,3 +42,17 @@ static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程�
 static BOOL ProcessHide(IN DWORD pid); // 隐藏进程
 static BOOL WindowHide(IN HWND hwnd); // 隐藏窗口 反截图
 ```
+
+ToDo:
+
+- [x] MDL Read MDL 读内存
+- [x] MDL Write MDL 写内存
+- [x] Keyboard and Mouse 驱动键鼠
+- [x] GetModuleBase 取进程模块基址
+- [x] ForceDeleteFile 强删文件
+- [x] ProcessHide 进程隐藏
+- [ ] WindowHide 窗口隐藏
+- [ ] 绘制 API
+- [ ] 多级偏移读写
+- [ ] 转易语言模块
+- [ ] 驱动隐藏
