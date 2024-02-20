@@ -482,7 +482,7 @@ static BOOL WindowHideInitialize()// ≥ı ºªØ
 	*/
 	ULONGLONG address = FindPatternImage(win32kfullAddress,
 		"\xE8\x00\x00\x00\x00\x8B\xF0\x85\xC0\x75\x00\x44\x8B\x44",
-		"x????xxxxx?xxx");
+		"x????x?xxx?xxx");
 	DbgPrintEx(0, 0, "[ZfDriver] Pattern address is 0x%llX \n", address);
 	if (address == 0) return FALSE;
 
