@@ -41,7 +41,6 @@ typedef struct _SYSTEM_MODULE_INFORMATION
 } SYSTEM_MODULE_INFORMATION, * PSYSTEM_MODULE_INFORMATION;
 
 // GLOBAL
-ULONG64 gMiUnloadSystemImageAddress = 0;
 FChangeWindowTreeProtection gChangeWindowTreeProtection = 0;
 FValidateHwnd gValidateHwnd = 0;
 
@@ -330,10 +329,10 @@ static DWORD FindEprocessActiveProcessLinksOffset() // »ñÈ¡ActiveProcessLinksÆ«Ò
 	Go through the EPROCESS structure and look for the PID
 	we can start at 0x20 because UniqueProcessId should
 	not be in the first 0x20 bytes,
-	also we should stop after 0x300 bytes with no success
+	also we should stop after 0x600 bytes with no success
 	*/
 
-	for (int i = 0x20; i < 0x300; i += 4)
+	for (int i = 0x20; i < 0x600; i += 4)
 	{
 		if ((*(DWORD*)((UCHAR*)eprocs[0] + i) == pids[0])
 			&& (*(DWORD*)((UCHAR*)eprocs[1] + i) == pids[1])
@@ -353,67 +352,6 @@ static DWORD FindEprocessActiveProcessLinksOffset() // »ñÈ¡ActiveProcessLinksÆ«Ò
 	DbgPrint("[ZfDriver] Activeprocesslinks Offset: 0x%x", ofs);
 	return ofs;
 }
-static PVOID GetProcAddress(WCHAR* funcName) // È¡³öÖ¸¶¨º¯ÊýµØÖ·
-{
-	UNICODE_STRING funcNameUnicode = { 0 };
-	PVOID ref = NULL;
-
-	RtlInitUnicodeString(&funcNameUnicode, funcName);
-	ref = MmGetSystemRoutineAddress(&funcNameUnicode);
-
-	return ref;
-}
-static ULONG64 GetMiUnloadSystemImageAddress() // ÌØÕ÷¶¨Î» MiUnloadSystemImage
-{
-	CHAR mmUnloadSystemImageCode[] = "\x83\xCA\xFF\x48\x8B\xCF\x48\x8B\xD8\xE8";
-
-	ULONG_PTR mmUnloadSystemImageAddress = 0;
-	ULONG_PTR miUnloadSystemImageAddress = 0;
-	ULONG_PTR startAddress = 0;
-
-	mmUnloadSystemImageAddress = (ULONG_PTR)GetProcAddress(L"MmUnloadSystemImage");
-	if (mmUnloadSystemImageAddress == 0)
-	{
-		return 0;
-	}
-
-	// ÔÚMmUnloadSystemImageÖÐËÑË÷ÌØÕ÷ÂëÑ°ÕÒMiUnloadSystemImage
-	startAddress = mmUnloadSystemImageAddress;
-	while (startAddress < mmUnloadSystemImageAddress + 0x500)
-	{
-		if (memcmp((VOID*)startAddress, mmUnloadSystemImageCode, strlen(mmUnloadSystemImageCode)) == 0)
-		{
-			startAddress += strlen(mmUnloadSystemImageCode);
-			miUnloadSystemImageAddress = *(LONG*)startAddress + startAddress + 4;
-			break;
-		}
-		++startAddress;
-	}
-
-	if (miUnloadSystemImageAddress != 0)
-	{
-		return miUnloadSystemImageAddress;
-	}
-	return 0;
-}
-static MiProcessLoaderEntry GetMiProcessLoaderEntry(ULONG64 startAddress)// ÌØÕ÷¶¨Î» MiProcessLoaderEntry
-{
-	if (startAddress == 0)
-	{
-		return NULL;
-	}
-
-	while (startAddress < startAddress + 0x600)
-	{
-		if (*(UCHAR*)startAddress == 0xE8 && *(UCHAR*)(startAddress + 5) == 0x8B && *(UCHAR*)(startAddress + 6) == 0x05)
-		{
-			startAddress++;
-			return (MiProcessLoaderEntry)(*(LONG*)startAddress + startAddress + 4);
-		}
-		++startAddress;
-	}
-	return NULL;
-}
 BOOL Utils::ProcessHide(IN DWORD pid)
 {
 	PEPROCESS pEProcess = NULL;
@@ -423,31 +361,14 @@ BOOL Utils::ProcessHide(IN DWORD pid)
 	{
 		return FALSE;
 	}
-
-	KIRQL oldIrql;
 	static DWORD offset = FindEprocessActiveProcessLinksOffset();
 	PLIST_ENTRY listEntry = (PLIST_ENTRY)((DWORD64)pEProcess + offset);
-	oldIrql = KeRaiseIrqlToDpcLevel();
 
-	if (gMiUnloadSystemImageAddress == 0)
-	{
-		gMiUnloadSystemImageAddress = GetMiUnloadSystemImageAddress();
-	}
-	MiProcessLoaderEntry miProcessLoaderEntry = NULL;
-	miProcessLoaderEntry = GetMiProcessLoaderEntry(gMiUnloadSystemImageAddress);
-	if (miProcessLoaderEntry == NULL)
-	{
-		return FALSE;
-	}
-	miProcessLoaderEntry(listEntry, 0);
-	// Replace by MiProcessLoaderEntry
-	// ·ÀÖ¹À¶ÆÁ
-	//listEntry->Flink->Blink = listEntry->Blink;
-	//listEntry->Blink->Flink = listEntry->Flink;
-	//listEntry->Flink = listEntry;
-	//listEntry->Blink = listEntry;
+	listEntry->Flink->Blink = listEntry->Blink;
+	listEntry->Blink->Flink = listEntry->Flink;
+	listEntry->Flink = listEntry;
+	listEntry->Blink = listEntry;
 
-	KeLowerIrql(oldIrql);
 	return TRUE;
 }
 

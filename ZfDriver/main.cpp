@@ -46,7 +46,7 @@ int main(void)
 		std::cin >> pid;
 		if (pid == 0)
 			break;
-		std::cout << ZfDriver::ProcessHide(pid);
+		std::cout << ZfDriver::ProcessHide(pid) << std::endl;
 	}
 
 	// Window Hide
