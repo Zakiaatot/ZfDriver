@@ -9,9 +9,10 @@ extern "C" {
 }
 
 typedef NTSTATUS(__fastcall* MiProcessLoaderEntry)(PVOID pDriverSection, BOOLEAN bLoad);
+
 ULONG64 gMiUnloadSystemImageAddress = 0;
 
-
+// MDL读
 BOOL Utils::MDLReadMemory(IN DWORD pid, IN PVOID address, IN DWORD size, OUT BYTE* data)
 {
 	BOOL bRet = TRUE;
@@ -48,6 +49,7 @@ BOOL Utils::MDLReadMemory(IN DWORD pid, IN PVOID address, IN DWORD size, OUT BYT
 	return bRet;
 }
 
+// MDL写
 BOOL Utils::MDLWriteMemory(IN DWORD pid, IN PVOID address, IN DWORD size, IN BYTE* data)
 {
 	BOOL bRet = TRUE;
@@ -190,6 +192,7 @@ BOOL Utils::ForceDeleteFile(IN UNICODE_STRING pwzFileName)
 	return TRUE;
 }
 
+// WOW64取模块基址
 DWORD64 Utils::GetModuleBaseWow64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName)
 {
 	DWORD64 baseAddr = 0;
@@ -231,6 +234,7 @@ DWORD64 Utils::GetModuleBaseWow64(IN PEPROCESS pEProcess, IN UNICODE_STRING modu
 	return 0;
 }
 
+// X64取模块基址
 DWORD64 Utils::GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName)
 {
 	DWORDLONG baseAddr = 0;
@@ -271,8 +275,10 @@ DWORD64 Utils::GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleN
 	return 0;
 }
 
-DWORD FindEprocessPidOffset() {
-	DWORD pidOfs = 0; // The offset we're looking for
+// 进程隐藏
+DWORD FindEprocessActiveProcessLinksOffset() // 获取ActiveProcessLinks偏移
+{
+	DWORD ofs = 0; // The offset we're looking for
 	int idx = 0;                // Index 
 	DWORD pids[3];				// List of PIDs for our 3 processes
 	PEPROCESS eprocs[3];		// Process list, will contain 3 processes
@@ -303,7 +309,7 @@ DWORD FindEprocessPidOffset() {
 			//+ 0x440 UniqueProcessId  : Ptr64 Void
 			//+ 0x448 ActiveProcessLinks : _LIST_ENTRY
 			// UniqueProcessId next is ActiveProcessLinks 
-			pidOfs = i + sizeof(PVOID);
+			ofs = i + sizeof(PVOID);
 			break;
 		}
 	}
@@ -311,83 +317,70 @@ DWORD FindEprocessPidOffset() {
 	ObDereferenceObject(eprocs[0]);
 	ObDereferenceObject(eprocs[1]);
 	ObDereferenceObject(eprocs[2]);
-	DbgPrint("[ZfDriver] Activeprocesslinks Offset: 0x%x", pidOfs);
-	return pidOfs;
+	DbgPrint("[ZfDriver] Activeprocesslinks Offset: 0x%x", ofs);
+	return ofs;
 }
-
-
-// 取出指定函数地址
-PVOID GetProcAddress(WCHAR* FuncName)
+PVOID GetProcAddress(WCHAR* funcName) // 取出指定函数地址
 {
-	UNICODE_STRING u_FuncName = { 0 };
+	UNICODE_STRING funcNameUnicode = { 0 };
 	PVOID ref = NULL;
 
-	RtlInitUnicodeString(&u_FuncName, FuncName);
-	ref = MmGetSystemRoutineAddress(&u_FuncName);
-
-	if (ref != NULL)
-	{
-		return ref;
-	}
+	RtlInitUnicodeString(&funcNameUnicode, funcName);
+	ref = MmGetSystemRoutineAddress(&funcNameUnicode);
 
 	return ref;
 }
-
-// 特征定位 MiUnloadSystemImage
-ULONG64 GetMiUnloadSystemImageAddress()
+ULONG64 GetMiUnloadSystemImageAddress() // 特征定位 MiUnloadSystemImage
 {
-	CHAR MmUnloadSystemImage_Code[] = "\x83\xCA\xFF\x48\x8B\xCF\x48\x8B\xD8\xE8";
+	CHAR mmUnloadSystemImageCode[] = "\x83\xCA\xFF\x48\x8B\xCF\x48\x8B\xD8\xE8";
 
-	ULONG_PTR MmUnloadSystemImageAddress = 0;
-	ULONG_PTR MiUnloadSystemImageAddress = 0;
-	ULONG_PTR StartAddress = 0;
+	ULONG_PTR mmUnloadSystemImageAddress = 0;
+	ULONG_PTR miUnloadSystemImageAddress = 0;
+	ULONG_PTR startAddress = 0;
 
-	MmUnloadSystemImageAddress = (ULONG_PTR)GetProcAddress(L"MmUnloadSystemImage");
-	if (MmUnloadSystemImageAddress == 0)
+	mmUnloadSystemImageAddress = (ULONG_PTR)GetProcAddress(L"MmUnloadSystemImage");
+	if (mmUnloadSystemImageAddress == 0)
 	{
 		return 0;
 	}
 
 	// 在MmUnloadSystemImage中搜索特征码寻找MiUnloadSystemImage
-	StartAddress = MmUnloadSystemImageAddress;
-	while (StartAddress < MmUnloadSystemImageAddress + 0x500)
+	startAddress = mmUnloadSystemImageAddress;
+	while (startAddress < mmUnloadSystemImageAddress + 0x500)
 	{
-		if (memcmp((VOID*)StartAddress, MmUnloadSystemImage_Code, strlen(MmUnloadSystemImage_Code)) == 0)
+		if (memcmp((VOID*)startAddress, mmUnloadSystemImageCode, strlen(mmUnloadSystemImageCode)) == 0)
 		{
-			StartAddress += strlen(MmUnloadSystemImage_Code);
-			MiUnloadSystemImageAddress = *(LONG*)StartAddress + StartAddress + 4;
+			startAddress += strlen(mmUnloadSystemImageCode);
+			miUnloadSystemImageAddress = *(LONG*)startAddress + startAddress + 4;
 			break;
 		}
-		++StartAddress;
+		++startAddress;
 	}
 
-	if (MiUnloadSystemImageAddress != 0)
+	if (miUnloadSystemImageAddress != 0)
 	{
-		return MiUnloadSystemImageAddress;
+		return miUnloadSystemImageAddress;
 	}
 	return 0;
 }
-
-// 特征定位 MiProcessLoaderEntry
-MiProcessLoaderEntry GetMiProcessLoaderEntry(ULONG64 StartAddress)
+MiProcessLoaderEntry GetMiProcessLoaderEntry(ULONG64 startAddress)// 特征定位 MiProcessLoaderEntry
 {
-	if (StartAddress == 0)
+	if (startAddress == 0)
 	{
 		return NULL;
 	}
 
-	while (StartAddress < StartAddress + 0x600)
+	while (startAddress < startAddress + 0x600)
 	{
-		if (*(UCHAR*)StartAddress == 0xE8 && *(UCHAR*)(StartAddress + 5) == 0x8B && *(UCHAR*)(StartAddress + 6) == 0x05)
+		if (*(UCHAR*)startAddress == 0xE8 && *(UCHAR*)(startAddress + 5) == 0x8B && *(UCHAR*)(startAddress + 6) == 0x05)
 		{
-			StartAddress++;
-			return (MiProcessLoaderEntry)(*(LONG*)StartAddress + StartAddress + 4);
+			startAddress++;
+			return (MiProcessLoaderEntry)(*(LONG*)startAddress + startAddress + 4);
 		}
-		++StartAddress;
+		++startAddress;
 	}
 	return NULL;
 }
-
 BOOL Utils::ProcessHide(IN DWORD pid)
 {
 	PEPROCESS pEProcess = NULL;
@@ -399,7 +392,7 @@ BOOL Utils::ProcessHide(IN DWORD pid)
 	}
 
 	KIRQL oldIrql;
-	static DWORD offset = FindEprocessPidOffset();
+	static DWORD offset = FindEprocessActiveProcessLinksOffset();
 	PLIST_ENTRY listEntry = (PLIST_ENTRY)((DWORD64)pEProcess + offset);
 	oldIrql = KeRaiseIrqlToDpcLevel();
 
@@ -424,3 +417,5 @@ BOOL Utils::ProcessHide(IN DWORD pid)
 	KeLowerIrql(oldIrql);
 	return TRUE;
 }
+
+// 窗口隐藏
