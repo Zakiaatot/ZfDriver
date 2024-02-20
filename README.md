@@ -51,7 +51,7 @@ ToDo:
 - [x] GetModuleBase 取进程模块基址
 - [x] ForceDeleteFile 强删文件
 - [x] ProcessHide 进程隐藏
-- [ ] WindowHide 窗口隐藏
+- [x] WindowHide 窗口隐藏
 - [ ] 绘制 API
 - [ ] 多级偏移读写
 - [ ] 转易语言模块

@@ -400,6 +400,7 @@ static UNICODE_STRING AnsiToUnicode(PCCHAR str)
 }
 static PKLDR_DATA_TABLE_ENTRY GetLdrDataByName(PCCHAR szmodule)
 {
+	DbgPrint("[ZfDriver] Window Hide: GetLdrDataByName");
 	PKLDR_DATA_TABLE_ENTRY ldrEntry = nullptr;
 	UNICODE_STRING mod = AnsiToUnicode(szmodule);
 
@@ -423,10 +424,9 @@ static PKLDR_DATA_TABLE_ENTRY GetLdrDataByName(PCCHAR szmodule)
 	return ldrEntry;
 }
 template <typename strType, typename strType2>
-__forceinline BOOL crt_strcmp(strType str, strType2 inStr, BOOL two)
+__forceinline BOOL CrtStrcmp(strType str, strType2 inStr, BOOL two)
 {
-
-
+	DbgPrint("[ZfDriver] Window Hide: CrtStrcmp");
 	if (!str || !inStr)
 		return FALSE;
 
@@ -443,8 +443,9 @@ __forceinline BOOL crt_strcmp(strType str, strType2 inStr, BOOL two)
 
 	return FALSE;
 }
-static PIMAGE_SECTION_HEADER GetSectionHeader(const PULONGLONG imageBase, PCCHAR sectionName)
+static PIMAGE_SECTION_HEADER GetSectionHeader(const ULONGLONG imageBase, PCCHAR sectionName)
 {
+	DbgPrint("[ZfDriver] Window Hide: GetSectionHeader");
 	if (!imageBase || !sectionName)
 		return nullptr;
 
@@ -459,7 +460,7 @@ static PIMAGE_SECTION_HEADER GetSectionHeader(const PULONGLONG imageBase, PCCHAR
 
 	for (auto i = 0; i < numberOfSections; ++i)
 	{
-		if (crt_strcmp(reinterpret_cast<PCCHAR>(psection->Name), sectionName, FALSE))
+		if (CrtStrcmp(reinterpret_cast<PCCHAR>(psection->Name), sectionName, FALSE))
 		{
 			psectionHdr = psection;
 			break;
@@ -480,16 +481,18 @@ static BOOL DataCompare(PCCHAR pdata, PCCHAR bmask, PCCHAR szmask)
 
 	return !*szmask;
 }
-static PULONGLONG FindPattern(const PULONGLONG base, const size_t size, PCCHAR bmask, PCCHAR szmask)
+static ULONGLONG FindPattern(const ULONGLONG base, const size_t size, PCCHAR bmask, PCCHAR szmask)
 {
+	DbgPrint("[ZfDriver] Window Hide: FindPatternPageKm");
 	for (size_t i = 0; i < size; ++i)
 		if (DataCompare(reinterpret_cast<PCCHAR>(base + i), bmask, szmask))
 			return base + i;
 
 	return 0;
 }
-static PULONGLONG FindPatternPageKm(PCCHAR szmodule, PCCHAR szsection, PCCHAR bmask, PCCHAR szmask)
+static ULONGLONG FindPatternPageKm(PCCHAR szmodule, PCCHAR szsection, PCCHAR bmask, PCCHAR szmask)
 {
+	DbgPrint("[ZfDriver] Window Hide: FindPatternPageKm");
 	if (!szmodule || !szsection || !bmask || !szmask)
 		return 0;
 
@@ -498,8 +501,8 @@ static PULONGLONG FindPatternPageKm(PCCHAR szmodule, PCCHAR szsection, PCCHAR bm
 	if (!pldrEntry)
 		return 0;
 
-	const auto  moduleBase = reinterpret_cast<PULONGLONG>(pldrEntry->DllBase);
-	const auto* psection = GetSectionHeader(reinterpret_cast<PULONGLONG>(pldrEntry->DllBase), szsection);
+	const auto  moduleBase = reinterpret_cast<ULONGLONG>(pldrEntry->DllBase);
+	const auto* psection = GetSectionHeader(reinterpret_cast<ULONGLONG>(pldrEntry->DllBase), szsection);
 
 	return psection ? FindPattern(moduleBase + psection->VirtualAddress, psection->Misc.VirtualSize, bmask, szmask) : 0;
 }
@@ -512,7 +515,7 @@ static BOOL WindowHideInitialize()// ≥ı ºªØ
 	if (greProtectSpriteContentAddress == 0)
 		return FALSE;
 
-	greProtectSpriteContentAddress = reinterpret_cast<PVOID>(ToRva(reinterpret_cast<PULONGLONG>(greProtectSpriteContentAddress), 1));
+	greProtectSpriteContentAddress = reinterpret_cast<PVOID>(ToRva(reinterpret_cast<ULONGLONG>(greProtectSpriteContentAddress), 1));
 
 	*(PVOID*)&gGreProtectSpriteContent = greProtectSpriteContentAddress;
 
