@@ -3,46 +3,60 @@
 #include "Peb.h"
 #include "Utils.h"
 
+
+// Define
+#define ToRva(address, offset) address + (INT32)((*(INT32*)(address + offset) + offset) + sizeof(INT32))
+#define ToLower(cChar) ((cChar >= 'A' && cChar <= 'Z') ? (cChar + 32) : cChar)
+
 // Export Api
 extern "C" {
 	NTKERNELAPI PVOID NTAPI PsGetProcessPeb(_In_ PEPROCESS Process);
 	NTKERNELAPI PVOID NTAPI PsGetProcessWow64Process(_In_ PEPROCESS Process);
-	NTSTATUS NTAPI ZwQuerySystemInformation
-	(
-		DWORD32 systemInformationClass,
-		PVOID systemInformation,
-		ULONG systemInformationLength,
-		PULONG returnLength
-	);
-	NTKERNELAPI PVOID NTAPI RtlFindExportedRoutineByName(_In_ PVOID ImageBase, _In_ PCCH RoutineName);
+	NTKERNELAPI PLIST_ENTRY  PsLoadedModuleList;
 }
 
 // Type Define
-typedef NTSTATUS(__fastcall* MiProcessLoaderEntry)(PVOID pDriverSection, BOOLEAN bLoad);
-typedef INT64(__fastcall* FChangeWindowTreeProtection)(PVOID a1, INT a2);
-typedef INT64(__fastcall* FValidateHwnd)(INT64 a1);
-
-typedef struct _SYSTEM_MODULE
+typedef struct _KLDR_DATA_TABLE_ENTRY
 {
-	ULONG_PTR Reserved[2];
-	PVOID Base;
-	ULONG Size;
-	ULONG Flags;
-	USHORT Index;
-	USHORT Unknown;
-	USHORT LoadCount;
-	USHORT ModuleNameOffset;
-	CHAR ImageName[256];
-} SYSTEM_MODULE, * PSYSTEM_MODULE;
-typedef struct _SYSTEM_MODULE_INFORMATION
-{
-	ULONG_PTR ulModuleCount;
-	SYSTEM_MODULE Modules[1];
-} SYSTEM_MODULE_INFORMATION, * PSYSTEM_MODULE_INFORMATION;
+	/* 0x0000 */ struct _LIST_ENTRY InLoadOrderLinks;
+	/* 0x0010 */ void* ExceptionTable;
+	/* 0x0018 */ unsigned long ExceptionTableSize;
+	/* 0x001c */ long Padding_687;
+	/* 0x0020 */ void* GpValue;
+	/* 0x0028 */ struct _NON_PAGED_DEBUG_INFO* NonPagedDebugInfo;
+	/* 0x0030 */ void* DllBase;
+	/* 0x0038 */ void* EntryPoint;
+	/* 0x0040 */ unsigned long SizeOfImage;
+	/* 0x0044 */ long Padding_688;
+	/* 0x0048 */ struct _UNICODE_STRING FullDllName;
+	/* 0x0058 */ struct _UNICODE_STRING BaseDllName;
+	/* 0x0068 */ unsigned long Flags;
+	/* 0x006c */ unsigned short LoadCount;
+	union
+	{
+		union
+		{
+			struct /* bitfield */
+			{
+				/* 0x006e */ unsigned short SignatureLevel : 4; /* bit position: 0 */
+				/* 0x006e */ unsigned short SignatureType : 3; /* bit position: 4 */
+				/* 0x006e */ unsigned short Unused : 9; /* bit position: 7 */
+			}; /* bitfield */
+			/* 0x006e */ unsigned short EntireField;
+		}; /* size: 0x0002 */
+	} /* size: 0x0002 */ u1;
+	/* 0x0070 */ void* SectionPointer;
+	/* 0x0078 */ unsigned long CheckSum;
+	/* 0x007c */ unsigned long CoverageSectionSize;
+	/* 0x0080 */ void* CoverageSection;
+	/* 0x0088 */ void* LoadedImports;
+	/* 0x0090 */ void* Spare;
+	/* 0x0098 */ unsigned long SizeOfImageNotRounded;
+	/* 0x009c */ unsigned long TimeDateStamp;
+} KLDR_DATA_TABLE_ENTRY, * PKLDR_DATA_TABLE_ENTRY; /* size: 0x00a0 */
 
 // GLOBAL
-FChangeWindowTreeProtection gChangeWindowTreeProtection = 0;
-FValidateHwnd gValidateHwnd = 0;
+INT64(*gGreProtectSpriteContent)(INT64, UINT64, INT32, CHAR) = NULL;
 
 // MDL读
 BOOL Utils::MDLReadMemory(IN DWORD pid, IN PVOID address, IN DWORD size, OUT BYTE* data)
@@ -373,140 +387,136 @@ BOOL Utils::ProcessHide(IN DWORD pid)
 }
 
 // 窗口隐藏
-static BOOL GetModuleBaseAddress(PCCHAR name, ULONGLONG& addr, ULONG& size)// 获取模块基址
+static UNICODE_STRING AnsiToUnicode(PCCHAR str)
 {
-	ULONG needSize = 0;
-	ZwQuerySystemInformation(11, &needSize, 0, &needSize);
-	if (needSize == 0) return FALSE;
 
-	ULONG tag = 'VMON';
-	PSYSTEM_MODULE_INFORMATION sysMods = (PSYSTEM_MODULE_INFORMATION)ExAllocatePoolWithTag(NonPagedPool, needSize, tag);
-	if (sysMods == 0) return FALSE;
+	UNICODE_STRING unicode;
+	ANSI_STRING ansiStr;
 
-	NTSTATUS status = ZwQuerySystemInformation(11, sysMods, needSize, 0);
-	if (!NT_SUCCESS(status))
+	RtlInitAnsiString(&ansiStr, str);
+	RtlAnsiStringToUnicodeString(&unicode, &ansiStr, TRUE);
+
+	return unicode;
+}
+static PKLDR_DATA_TABLE_ENTRY GetLdrDataByName(PCCHAR szmodule)
+{
+	PKLDR_DATA_TABLE_ENTRY ldrEntry = nullptr;
+	UNICODE_STRING mod = AnsiToUnicode(szmodule);
+
+	PLIST_ENTRY psLoadedModuleList = PsLoadedModuleList;
+	if (!psLoadedModuleList)
+		return ldrEntry;
+
+	auto currentLdrEntry = reinterpret_cast<PKLDR_DATA_TABLE_ENTRY>(psLoadedModuleList->Flink);
+
+	while (reinterpret_cast<PLIST_ENTRY>(currentLdrEntry) != psLoadedModuleList)
 	{
-		ExFreePoolWithTag(sysMods, tag);
-		return FALSE;
-	}
-
-	for (ULONGLONG i = 0; i < sysMods->ulModuleCount; i++)
-	{
-		PSYSTEM_MODULE mod = &sysMods->Modules[i];
-		if (strstr(mod->ImageName, name))
+		if (!RtlCompareUnicodeString(&currentLdrEntry->BaseDllName, &mod, TRUE))
 		{
-			addr = (ULONGLONG)mod->Base;
-			size = (ULONG)mod->Size;
+			ldrEntry = currentLdrEntry;
 			break;
 		}
+
+		currentLdrEntry = reinterpret_cast<PKLDR_DATA_TABLE_ENTRY>(currentLdrEntry->InLoadOrderLinks.Flink);
 	}
 
-	ExFreePoolWithTag(sysMods, tag);
-	return TRUE;
+	return ldrEntry;
 }
-static BOOL PatternCheck(PCCHAR data, PCCHAR pattern, PCCHAR mask)// 模式匹配
+template <typename strType, typename strType2>
+__forceinline BOOL crt_strcmp(strType str, strType2 inStr, BOOL two)
 {
-	size_t len = strlen(mask);
 
-	for (size_t i = 0; i < len; i++)
+
+	if (!str || !inStr)
+		return FALSE;
+
+	WCHAR c1, c2;
+	do
 	{
-		if (data[i] == pattern[i] || mask[i] == '?')
-			continue;
-		else
+		c1 = *str++; c2 = *inStr++;
+		c1 = ToLower(c1); c2 = ToLower(c2);
+
+		if (!c1 && (two ? !c2 : 1))
+			return TRUE;
+
+	} while (c1 == c2);
+
+	return FALSE;
+}
+static PIMAGE_SECTION_HEADER GetSectionHeader(const PULONGLONG imageBase, PCCHAR sectionName)
+{
+	if (!imageBase || !sectionName)
+		return nullptr;
+
+	const auto pimageDosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(imageBase);
+	const auto pimageNtHeader = reinterpret_cast<PIMAGE_NT_HEADERS64>(imageBase + pimageDosHeader->e_lfanew);
+
+	auto psection = reinterpret_cast<PIMAGE_SECTION_HEADER>(pimageNtHeader + 1);
+
+	PIMAGE_SECTION_HEADER psectionHdr = nullptr;
+
+	const auto numberOfSections = pimageNtHeader->FileHeader.NumberOfSections;
+
+	for (auto i = 0; i < numberOfSections; ++i)
+	{
+		if (crt_strcmp(reinterpret_cast<PCCHAR>(psection->Name), sectionName, FALSE))
+		{
+			psectionHdr = psection;
+			break;
+		}
+
+		++psection;
+	}
+
+	return psectionHdr;
+}
+static BOOL DataCompare(PCCHAR pdata, PCCHAR bmask, PCCHAR szmask)
+{
+	for (; *szmask; ++szmask, ++pdata, ++bmask)
+	{
+		if (*szmask == 'x' && *pdata != *bmask)
 			return FALSE;
 	}
 
-	return TRUE;
+	return !*szmask;
 }
-static ULONGLONG FindPattern(ULONGLONG addr, ULONG size, PCCHAR pattern, PCCHAR mask)
+static PULONGLONG FindPattern(const PULONGLONG base, const size_t size, PCCHAR bmask, PCCHAR szmask)
 {
-	size -= (ULONG)strlen(mask);
-
-	for (ULONG i = 0; i < size; i++)
-	{
-		if (PatternCheck((PCCHAR)addr + i, pattern, mask))
-			return addr + i;
-	}
+	for (size_t i = 0; i < size; ++i)
+		if (DataCompare(reinterpret_cast<PCCHAR>(base + i), bmask, szmask))
+			return base + i;
 
 	return 0;
 }
-static ULONGLONG FindPatternImage(ULONGLONG addr, PCCHAR pattern, PCCHAR mask)
+static PULONGLONG FindPatternPageKm(PCCHAR szmodule, PCCHAR szsection, PCCHAR bmask, PCCHAR szmask)
 {
-	PIMAGE_DOS_HEADER dos = (PIMAGE_DOS_HEADER)addr;
-	if (dos->e_magic != IMAGE_DOS_SIGNATURE)
+	if (!szmodule || !szsection || !bmask || !szmask)
 		return 0;
 
-	PIMAGE_NT_HEADERS64 nt = (PIMAGE_NT_HEADERS64)(addr + dos->e_lfanew);
-	if (nt->Signature != IMAGE_NT_SIGNATURE)
+	const auto* pldrEntry = GetLdrDataByName(szmodule);
+
+	if (!pldrEntry)
 		return 0;
 
-	PIMAGE_SECTION_HEADER section = IMAGE_FIRST_SECTION(nt);
+	const auto  moduleBase = reinterpret_cast<PULONGLONG>(pldrEntry->DllBase);
+	const auto* psection = GetSectionHeader(reinterpret_cast<PULONGLONG>(pldrEntry->DllBase), szsection);
 
-	for (USHORT i = 0; i < nt->FileHeader.NumberOfSections; i++)
-	{
-		PIMAGE_SECTION_HEADER p = &section[i];
-
-		if (strstr((PCCHAR)p->Name, ".text") || 'EGAP' == *reinterpret_cast<int*>(p->Name))
-		{
-			ULONGLONG res = FindPattern(addr + p->VirtualAddress, p->Misc.VirtualSize, pattern, mask);
-			if (res) return res;
-		}
-	}
-
-	return 0;
-}
-static PVOID GetSystemBaseExport(PCCHAR moduleName, PCCHAR routineName)// 获取导出函数
-{
-	ULONGLONG win32kbaseAddress = 0;
-	ULONG win32kbaseLength = 0;
-	GetModuleBaseAddress(moduleName, win32kbaseAddress, win32kbaseLength);
-	DbgPrintEx(0, 0, "[ZfDriver] %s base address is 0x%llX \n", moduleName, win32kbaseAddress);
-	if (MmIsAddressValid((PVOID)win32kbaseAddress) == FALSE) return 0;
-
-	return RtlFindExportedRoutineByName((PVOID)win32kbaseAddress, routineName);
+	return psection ? FindPattern(moduleBase + psection->VirtualAddress, psection->Misc.VirtualSize, bmask, szmask) : 0;
 }
 static BOOL WindowHideInitialize()// 初始化
 {
 	DbgPrint("[ZfDriver] Window Hide Initializing");
-	ULONGLONG win32kfullAddress = 0;
-	ULONG win32kfullLength = 0;
-	GetModuleBaseAddress("win32kfull.sys", win32kfullAddress, win32kfullLength);
-	DbgPrintEx(0, 0, "[ZfDriver] win32kfull base address is 0x%llX \n", win32kfullAddress);
-	if (MmIsAddressValid((PVOID)win32kfullAddress) == FALSE) return FALSE;
+	PVOID greProtectSpriteContentAddress = reinterpret_cast<PVOID>(FindPatternPageKm("win32kfull.sys", ".text",
+		"\xE8\x00\x00\x00\x00\x8B\xF8\x85\xC0\x75\x0E", "x????xxxxxx"));
 
-	/*
-	call    ?ChangeWindowTreeProtection@@YAHPEAUtagWND@@H@Z ; ChangeWindowTreeProtection(tagWND *,int)
-	mov     esi, eax
-	test    eax, eax
-	jnz     short loc_1C0245002
-	*/
-	ULONGLONG address = FindPatternImage(win32kfullAddress,
-		"\xE8\x00\x00\x00\x00\x8B\xF0\x85\xC0\x75\x00\x44\x8B\x44",
-		"x????x?xxx?xxx");
-	DbgPrintEx(0, 0, "[ZfDriver] Pattern address is 0x%llX \n", address);
-	if (address == 0) return FALSE;
+	if (greProtectSpriteContentAddress == 0)
+		return FALSE;
 
-	// 5=汇编指令长度
-	// 1=偏移
-	gChangeWindowTreeProtection = reinterpret_cast<FChangeWindowTreeProtection>(reinterpret_cast<PCHAR>(address) + 5 + *reinterpret_cast<PINT>(reinterpret_cast<char*>(address) + 1));
-	DbgPrintEx(0, 0, "[ZfDriver] ChangeWindowTreeProtection address is 0x%p \n", gChangeWindowTreeProtection);
-	if (MmIsAddressValid(gChangeWindowTreeProtection) == FALSE) return FALSE;
+	greProtectSpriteContentAddress = reinterpret_cast<PVOID>(ToRva(reinterpret_cast<PULONGLONG>(greProtectSpriteContentAddress), 1));
 
-	gValidateHwnd = (FValidateHwnd)GetSystemBaseExport("win32kbase.sys", "ValidateHwnd");
-	DbgPrintEx(0, 0, "[ZfDriver] ValidateHwnd address is 0x%p \n", gValidateHwnd);
-	if (MmIsAddressValid(gValidateHwnd) == FALSE) return FALSE;
+	*(PVOID*)&gGreProtectSpriteContent = greProtectSpriteContentAddress;
 
 	return TRUE;
-}
-static INT64 ChangeWindowAttributes(INT64 handler, INT attributes)// 修改窗口状态
-{
-	if (MmIsAddressValid(gChangeWindowTreeProtection) == FALSE) return 0;
-	if (MmIsAddressValid(gValidateHwnd) == FALSE) return 0;
-
-	PVOID wndPtr = (PVOID)gValidateHwnd(handler);
-	if (MmIsAddressValid(wndPtr) == FALSE) return 0;
-
-	return gChangeWindowTreeProtection(wndPtr, attributes);
 }
 BOOL Utils::WindowHide(IN HWND hwnd)
 {
@@ -516,7 +526,7 @@ BOOL Utils::WindowHide(IN HWND hwnd)
 	if (init)
 	{
 		INT attributes = 0x00000011; // WDA_EXCLUDEFROMCAPTURE
-		return ChangeWindowAttributes((INT64)hwnd, attributes);
+		return gGreProtectSpriteContent(0, (INT64)hwnd, 1, attributes);
 	}
 	else
 	{
