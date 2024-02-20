@@ -49,6 +49,14 @@ int main(void)
 		std::cout << ZfDriver::ProcessHide(pid);
 	}
 
+	// Window Hide
+	//HWND hwnd = FindWindowW(L"RegEdit_RegEdit", 0);
+	//if (hwnd)
+	//{
+	//	std::cout << "Hwnd: 0x" << std::hex << hwnd << std::endl;
+	//	std::cout << ZfDriver::WindowHide(hwnd) << std::endl;
+	//}
+
 	ZfDriver::Uninstall();
 	system("pause");
 	return 0;

@@ -43,6 +43,7 @@ public:
 	static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath 为宽字符路径  例如 L"C:\\123.exe"
 	static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址
 	static BOOL ProcessHide(IN DWORD pid); // 隐藏进程
+	static BOOL WindowHide(IN HWND hwnd); // 隐藏窗口 反截图
 };
 
 #endif // !_ZFDRIVER_H_

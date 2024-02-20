@@ -82,6 +82,9 @@ NTSTATUS DispatchIoctl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 	case IOCTL_CODE_PROCESS_HIDE:
 		status = DispatchHandler::ProcessHide(&handlerContext);
 		break;
+	case IOCTL_CODE_WINDOW_HIDE:
+		status = DispatchHandler::WindowHide(&handlerContext);
+		break;
 	}
 
 	// Judge Success Or Failed

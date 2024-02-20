@@ -133,3 +133,13 @@ NTSTATUS DispatchHandler::ProcessHide(PHandlerContext hContext)
 	else
 		return STATUS_UNSUCCESSFUL;
 }
+
+NTSTATUS DispatchHandler::WindowHide(PHandlerContext hContext)
+{
+	DbgPrint("[ZfDriver] Window Hide");
+	HWND hwnd = *(HWND*)hContext->pIoBuffer;
+	if (Utils::WindowHide(hwnd))
+		return STATUS_SUCCESS;
+	else
+		return STATUS_UNSUCCESSFUL;
+}

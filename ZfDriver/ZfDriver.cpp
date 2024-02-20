@@ -289,3 +289,12 @@ BOOL ZfDriver::ProcessHide(IN DWORD pid)
 		return FALSE;
 	return TRUE;
 }
+
+BOOL ZfDriver::WindowHide(IN HWND hwnd)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	if (!gDriverController.IoControl(IOCTL_CODE_WINDOW_HIDE, (PVOID)&hwnd, sizeof(HWND), NULL, 0, NULL))
+		return FALSE;
+	return TRUE;
+}
