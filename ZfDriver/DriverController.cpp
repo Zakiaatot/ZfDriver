@@ -1,6 +1,5 @@
 #include "DriverController.h"
 #include "Utils.h"
-#include <iostream>
 
 
 DriverController::DriverController()
@@ -55,9 +54,10 @@ BOOL DriverController::Install(PCWSTR sysPath, PCWSTR serviceName, PCWSTR displa
 			Stop();
 			Uninstall();
 
+			CloseServiceHandle(service_);
 			CloseServiceHandle(scManager_);
-			Utils::AlertError(L"Create Service Error! Please Reopen it.");
-			exit(-1);
+			//Utils::AlertError(L"Create Service Error! Please Reopen it.");
+			break;
 		}
 		return true;
 	} while (false);
@@ -69,7 +69,6 @@ BOOL DriverController::Start()
 {
 	if (!StartService(service_, NULL, NULL))
 	{
-		std::cout << GetLastError() << std::endl;
 		Utils::AlertError(L"Start Driver Error!");
 		return false;
 	}
@@ -79,7 +78,8 @@ BOOL DriverController::Start()
 BOOL DriverController::Stop()
 {
 	SERVICE_STATUS ss;
-	GetSvcHandle(serviceName_);
+	if (service_ == NULL)
+		GetSvcHandle(serviceName_);
 	if (!ControlService(service_, SERVICE_CONTROL_STOP, &ss))
 	{
 		return false;
@@ -89,7 +89,8 @@ BOOL DriverController::Stop()
 
 BOOL DriverController::Uninstall()
 {
-	GetSvcHandle(serviceName_);
+	if (service_ == NULL)
+		GetSvcHandle(serviceName_);
 	if (!DeleteService(service_))
 	{
 		return false;
@@ -154,13 +155,15 @@ BOOL DriverController::GetSvcHandle(PCWSTR serviceName)
 	serviceName_ = serviceName;
 	do
 	{
-		scManager_ = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+		if (scManager_ == NULL)
+			scManager_ = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 		if (scManager_ == NULL)
 		{
 			Utils::AlertError(L"Open SCManager Error!");
 			break;
 		}
-		service_ = OpenService(scManager_, serviceName_, SERVICE_ALL_ACCESS);
+		if (service_ == NULL)
+			service_ = OpenService(scManager_, serviceName_, SERVICE_ALL_ACCESS);
 		if (service_ == NULL)
 		{
 			CloseServiceHandle(scManager_);

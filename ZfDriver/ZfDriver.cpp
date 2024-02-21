@@ -18,9 +18,18 @@ BOOL ZfDriver::Install()
 	WCHAR sysPath[MAX_PATH] = { 0 };
 	Utils::GetAppPath(sysPath);
 	wcscat_s(sysPath, DRIVER_FILE_NAME);
+	if (!Utils::ReleaseResource(IDR_SYS1, L"SYS", DRIVER_FILE_NAME))
+		return FALSE;
+	int retryCount = 3;
+	while (retryCount > 0 && !gDriverController.Install(sysPath, DRIVER_SERVICE_NAME, DRIVER_SERVICE_NAME))
+	{
+		retryCount--;
+	}
+	if (retryCount == 0)
+	{
+		return FALSE;
+	}
 	if (
-		!Utils::ReleaseResource(IDR_SYS1, L"SYS", DRIVER_FILE_NAME) ||
-		!gDriverController.Install(sysPath, DRIVER_SERVICE_NAME, DRIVER_SERVICE_NAME) ||
 		!gDriverController.Start() ||
 		!gDriverController.Open(DRIVER_SYMLINK_NAME)
 		)
