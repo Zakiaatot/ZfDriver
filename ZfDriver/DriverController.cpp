@@ -33,8 +33,6 @@ BOOL DriverController::Install(PCWSTR sysPath, PCWSTR serviceName, PCWSTR displa
 		}
 
 		// Create Service
-		int retryCount = 0;
-	CREATE:
 		service_ = CreateService
 		(
 			scManager_,
@@ -53,33 +51,13 @@ BOOL DriverController::Install(PCWSTR sysPath, PCWSTR serviceName, PCWSTR displa
 		);
 		if (service_ == NULL)
 		{
-			DWORD error = GetLastError();
-			if (error == ERROR_SERVICE_EXISTS)
-			{
-				service_ = OpenService(scManager_, serviceName_, SERVICE_ALL_ACCESS);
-				if (service_ == NULL)
-				{
-					CloseServiceHandle(scManager_);
-					Utils::AlertError(L"Open Service Error!");
-					break;
-				}
-				DeleteService(service_);
-				if (retryCount >= 3)
-				{
-					CloseServiceHandle(scManager_);
-					Utils::AlertError(L"Create Service Error!");
-					break;
-				}
-				else {
-					goto CREATE;
-				}
-			}
-			else
-			{
-				CloseServiceHandle(scManager_);
-				Utils::AlertError(L"Create Service Error!");
-				break;
-			}
+			Close();
+			Stop();
+			Uninstall();
+
+			CloseServiceHandle(scManager_);
+			Utils::AlertError(L"Create Service Error! Please Reopen it.");
+			exit(-1);
 		}
 		return true;
 	} while (false);
@@ -104,7 +82,6 @@ BOOL DriverController::Stop()
 	GetSvcHandle(serviceName_);
 	if (!ControlService(service_, SERVICE_CONTROL_STOP, &ss))
 	{
-		Utils::AlertError(L"Stop Driver Error!");
 		return false;
 	}
 	return true;
@@ -115,7 +92,6 @@ BOOL DriverController::Uninstall()
 	GetSvcHandle(serviceName_);
 	if (!DeleteService(service_))
 	{
-		Utils::AlertError(L"Uninstall Driver Error!");
 		return false;
 	}
 	return true;

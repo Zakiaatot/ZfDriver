@@ -15,7 +15,7 @@ BOOL ZfDriver::Install()
 {
 	if (gIsZfDriverInstalled == TRUE)
 		return TRUE;
-	wchar_t sysPath[MAX_PATH] = { 0 };
+	WCHAR sysPath[MAX_PATH] = { 0 };
 	Utils::GetAppPath(sysPath);
 	wcscat_s(sysPath, DRIVER_FILE_NAME);
 	if (
@@ -28,6 +28,9 @@ BOOL ZfDriver::Install()
 		return FALSE;
 	}
 	gIsZfDriverInstalled = TRUE;
+	ZfDriver::ForceDeleteFile(sysPath);
+	VOID(*pAutoUninstallFunc)() = ZfDriver::Uninstall;
+	atexit(pAutoUninstallFunc);
 	return TRUE;
 }
 
