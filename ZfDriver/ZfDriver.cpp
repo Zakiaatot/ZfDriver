@@ -310,3 +310,12 @@ BOOL ZfDriver::WindowHide(IN HWND hwnd)
 		return FALSE;
 	return TRUE;
 }
+DWORD ZfDriver::GetProcessId(IN PCWSTR processName)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return 0;
+	DWORD id = 0;
+	if (!gDriverController.IoControl(IOCTL_CODE_GET_PROCESS_ID, (PVOID)processName, (wcslen(processName) + 1) * sizeof(WCHAR), &id, sizeof(DWORD), NULL))
+		return 0;
+	return id;
+}

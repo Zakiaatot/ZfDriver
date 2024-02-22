@@ -39,15 +39,15 @@ int main(void)
 	//ZfDriver::KeyDown(0x14); // 0x14: Caps lock
 
 	// Process Hide
-	int pid = 0;
-	while (true)
-	{
-		std::cout << "Pid: ";
-		std::cin >> pid;
-		if (pid == 0)
-			break;
-		std::cout << ZfDriver::ProcessHide(pid) << std::endl;
-	}
+	//int pid = 0;
+	//while (true)
+	//{
+	//	std::cout << "Pid: ";
+	//	std::cin >> pid;
+	//	if (pid == 0)
+	//		break;
+	//	std::cout << ZfDriver::ProcessHide(pid) << std::endl;
+	//}
 
 	// Window Hide
 	//HWND hwnd = FindWindowW(L"RegEdit_RegEdit", 0);
@@ -56,6 +56,9 @@ int main(void)
 	//	std::cout << "Hwnd: 0x" << std::hex << hwnd << std::endl;
 	//	std::cout << ZfDriver::WindowHide(hwnd) << std::endl;
 	//}
+
+	// Get Process Id
+	std::cout << ZfDriver::GetProcessId(L"explorer.exe") << std::endl;
 
 	ZfDriver::Uninstall();
 	system("pause");

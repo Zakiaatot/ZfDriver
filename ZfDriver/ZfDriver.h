@@ -44,6 +44,7 @@ public:
 	static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址
 	static BOOL ProcessHide(IN DWORD pid); // 隐藏进程
 	static BOOL WindowHide(IN HWND hwnd); // 隐藏窗口 反截图
+	static DWORD GetProcessId(IN PCWSTR processName);// 根据进程名称获取ID
 };
 
 #endif // !_ZFDRIVER_H_

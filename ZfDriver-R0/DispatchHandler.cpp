@@ -143,3 +143,21 @@ NTSTATUS DispatchHandler::WindowHide(PHandlerContext hContext)
 	else
 		return STATUS_UNSUCCESSFUL;
 }
+
+NTSTATUS DispatchHandler::GetProcessId(PHandlerContext hContext)
+{
+	DbgPrint("[ZfDriver] Get Process Id");
+	WCHAR processNameBuf[1024] = { 0 };
+	wcscat(processNameBuf, (PCWCHAR)hContext->pIoBuffer);
+	UNICODE_STRING processName;
+	RtlInitUnicodeString(&processName, processNameBuf);
+
+	DWORD id = Utils::GetProcessId(processName);
+	if (id > 0)
+	{
+		*(PDWORD)(hContext->pIoBuffer) = id;
+		return STATUS_SUCCESS;
+	}
+	else
+		return STATUS_UNSUCCESSFUL;
+}

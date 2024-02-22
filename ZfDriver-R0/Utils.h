@@ -12,6 +12,7 @@ namespace Utils
 	DWORD64 GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName);
 	BOOL ProcessHide(IN DWORD pid);
 	BOOL WindowHide(IN HWND hwnd);
+	DWORD GetProcessId(IN UNICODE_STRING processName);
 }
 
 #endif // !_UTILS_H_

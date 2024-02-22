@@ -41,6 +41,7 @@ static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath
 static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址
 static BOOL ProcessHide(IN DWORD pid); // 隐藏进程
 static BOOL WindowHide(IN HWND hwnd); // 隐藏窗口 反截图
+static DWORD GetProcessId(IN PCWSTR processName);// 根据进程名称获取ID
 ```
 
 ToDo:
@@ -52,6 +53,7 @@ ToDo:
 - [x] ForceDeleteFile 强删文件
 - [x] ProcessHide 进程隐藏
 - [x] WindowHide 窗口隐藏
+- [x] GetProcessId 获取进程 ID
 - [ ] 绘制 API
 - [ ] 多级偏移读写
 - [ ] 转易语言模块
