@@ -161,3 +161,23 @@ NTSTATUS DispatchHandler::GetProcessId(PHandlerContext hContext)
 	else
 		return STATUS_UNSUCCESSFUL;
 }
+
+NTSTATUS DispatchHandler::InjectDll(PHandlerContext hContext)
+{
+	DbgPrint("[ZfDriver] Inject Dll");
+	WCHAR dllNameBuf[1024] = { 0 };
+	IOCTL_TRANS_INJECT_DLL* pTrans = (IOCTL_TRANS_INJECT_DLL*)hContext->pIoBuffer;
+	wcscat(dllNameBuf, (PCWCHAR)pTrans->dllPath);
+	UNICODE_STRING dllName;
+	RtlInitUnicodeString(&dllName, dllNameBuf);
+
+	if (Utils::InjectDll((HANDLE)pTrans->pid, dllName))
+	{
+		return STATUS_SUCCESS;
+	}
+	else
+	{
+		return STATUS_UNSUCCESSFUL;
+	}
+	return STATUS_SUCCESS;
+}

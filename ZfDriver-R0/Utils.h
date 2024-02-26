@@ -13,6 +13,10 @@ namespace Utils
 	BOOL ProcessHide(IN DWORD pid);
 	BOOL WindowHide(IN HWND hwnd);
 	DWORD GetProcessId(IN UNICODE_STRING processName);
+	PVOID NewMem(IN HANDLE processId, IN ULONG size);
+	BOOL DelMem(IN HANDLE processId, IN PVOID address);
+	BOOL CreateThread(IN HANDLE processId, IN PVOID startAddress, IN PVOID parmaAddress);
+	BOOL InjectDll(IN HANDLE processId, IN UNICODE_STRING dllPath);
 }
 
 #endif // !_UTILS_H_

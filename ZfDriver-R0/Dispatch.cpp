@@ -88,6 +88,9 @@ NTSTATUS DispatchIoctl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 	case IOCTL_CODE_GET_PROCESS_ID:
 		status = DispatchHandler::GetProcessId(&handlerContext);
 		break;
+	case IOCTL_CODE_INJECT_DLL:
+		status = DispatchHandler::InjectDll(&handlerContext);
+		break;
 	}
 
 	// Judge Success Or Failed

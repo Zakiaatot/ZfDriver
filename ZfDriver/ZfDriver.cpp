@@ -310,6 +310,7 @@ BOOL ZfDriver::WindowHide(IN HWND hwnd)
 		return FALSE;
 	return TRUE;
 }
+
 DWORD ZfDriver::GetProcessId(IN PCWSTR processName)
 {
 	if (gIsZfDriverInstalled == FALSE)
@@ -318,4 +319,29 @@ DWORD ZfDriver::GetProcessId(IN PCWSTR processName)
 	if (!gDriverController.IoControl(IOCTL_CODE_GET_PROCESS_ID, (PVOID)processName, (wcslen(processName) + 1) * sizeof(WCHAR), &id, sizeof(DWORD), NULL))
 		return 0;
 	return id;
+}
+
+BOOL ZfDriver::InjectDll(IN DWORD pid, IN PCWSTR dllPath)
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	BYTE buf[1024] = { 0 };
+	IOCTL_TRANS_INJECT_DLL* pTrans = (IOCTL_TRANS_INJECT_DLL*)buf;
+	pTrans->pid = pid;
+	memcpy(pTrans->dllPath, dllPath, (wcslen(dllPath) + 1) * sizeof(WCHAR));
+	if (
+		!gDriverController.IoControl
+		(
+			IOCTL_CODE_INJECT_DLL,
+			pTrans,
+			sizeof(IOCTL_CODE_INJECT_DLL) + (wcslen(dllPath) + 1) * sizeof(WCHAR),
+			NULL,
+			0,
+			NULL
+		)
+		)
+	{
+		return FALSE;
+	}
+	return TRUE;
 }

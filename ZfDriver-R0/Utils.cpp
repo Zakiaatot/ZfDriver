@@ -1,6 +1,6 @@
 #include <ntifs.h>
 #include <ntimage.h>
-#include "Peb.h"
+#include "peb.h"
 #include "Utils.h"
 
 
@@ -20,9 +20,22 @@ extern "C" {
 		ULONG SystemInformationLength,
 		PULONG ReturnLength
 	);
+	NTKERNELAPI NTSTATUS RtlCreateUserThread
+	(
+		HANDLE ProcessHandle,
+		PSECURITY_DESCRIPTOR SecurityDescriptor,
+		BOOLEAN CreateSuspended,
+		ULONG StackZeroBits,
+		SIZE_T StackReserve,
+		SIZE_T StackCommit,
+		PVOID startAddress,
+		PVOID StartParameter,
+		PHANDLE ThreadHandle,
+		PVOID ClientID
+	);
 }
 
-// Type Define
+// type Define
 typedef struct _KLDR_DATA_TABLE_ENTRY
 {
 	/* 0x0000 */ struct _LIST_ENTRY InLoadOrderLinks;
@@ -31,7 +44,7 @@ typedef struct _KLDR_DATA_TABLE_ENTRY
 	/* 0x001c */ long Padding_687;
 	/* 0x0020 */ void* GpValue;
 	/* 0x0028 */ struct _NON_PAGED_DEBUG_INFO* NonPagedDebugInfo;
-	/* 0x0030 */ void* DllBase;
+	/* 0x0030 */ void* dllBase;
 	/* 0x0038 */ void* EntryPoint;
 	/* 0x0040 */ unsigned long SizeOfImage;
 	/* 0x0044 */ long Padding_688;
@@ -373,7 +386,7 @@ BOOL Utils::ForceDeleteFile(IN UNICODE_STRING pwzFileName)
 
 	__try
 	{
-		// 读取当前进程的EProcess
+		// 读取当前进程的eProcess
 		pCurEprocess = IoGetCurrentProcess();
 
 		// 附加进程
@@ -528,7 +541,7 @@ DWORD64 Utils::GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleN
 static DWORD FindEprocessActiveProcessLinksOffset() // 获取ActiveProcessLinks偏移
 {
 	DWORD ofs = 0; // The offset we're looking for
-	int idx = 0;                // Index 
+	int idx = 0;                // index 
 	DWORD pids[3];				// List of PIDs for our 3 processes
 	PEPROCESS eprocs[3];		// Process list, will contain 3 processes
 
@@ -704,8 +717,8 @@ static ULONGLONG FindPatternPageKm(PCCHAR szmodule, PCCHAR szsection, PCCHAR bma
 	if (!pldrEntry)
 		return 0;
 
-	const auto  moduleBase = reinterpret_cast<ULONGLONG>(pldrEntry->DllBase);
-	const auto* psection = GetSectionHeader(reinterpret_cast<ULONGLONG>(pldrEntry->DllBase), szsection);
+	const auto  moduleBase = reinterpret_cast<ULONGLONG>(pldrEntry->dllBase);
+	const auto* psection = GetSectionHeader(reinterpret_cast<ULONGLONG>(pldrEntry->dllBase), szsection);
 
 	return psection ? FindPattern(moduleBase + psection->VirtualAddress, psection->Misc.VirtualSize, bmask, szmask) : 0;
 }
@@ -795,4 +808,481 @@ DWORD Utils::GetProcessId(UNICODE_STRING processName)
 			ExFreePoolWithTag(info, 'QsIn');
 		return 0;
 	}
+}
+
+// 申请内存
+PVOID Utils::NewMem(HANDLE processId, ULONG size)
+{
+	// 检查进程ID是否为系统进程
+	if (processId == 0 || processId == (HANDLE)4)
+		return nullptr;
+	PEPROCESS tProcess = NULL;
+	BOOLEAN isDereferenceObject = FALSE;
+	BOOLEAN isAttachProcess = FALSE;
+	KAPC_STATE apcState = { 0 };
+	__try
+	{
+		// 获取进程信息
+		if (!NT_SUCCESS(PsLookupProcessByProcessId(processId, &tProcess)))
+			return nullptr;
+		isDereferenceObject = TRUE;
+		ObDereferenceObject(tProcess);
+		isDereferenceObject = FALSE;
+		KeStackAttachProcess(tProcess, &apcState);
+		isAttachProcess = TRUE;
+		PVOID address = 0;
+		SIZE_T allocSize = size;
+		ZwAllocateVirtualMemory(NtCurrentProcess(), &address, 0, &allocSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		KeUnstackDetachProcess(&apcState);
+		isAttachProcess = FALSE;
+		if (address == 0)
+			return nullptr;
+		else
+			return address;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		if (isAttachProcess)
+			KeUnstackDetachProcess(&apcState);
+		if (isDereferenceObject)
+			ObDereferenceObject(tProcess);
+		return nullptr;
+	}
+}
+
+// 释放内存
+BOOL Utils::DelMem(HANDLE processId, PVOID address)
+{
+	// 检查进程ID是否为系统进程
+	if (processId == 0 || processId == (HANDLE)4)
+		return FALSE;
+	// 检查地址
+	if ((ULONG64)address < 0x10000 || (ULONG64)address > 0x7FFFFFFFFFFF)
+		return FALSE;
+	PEPROCESS tProcess = NULL;
+	BOOLEAN isDereferenceObject = FALSE;
+	BOOLEAN isAttachProcess = FALSE;
+	KAPC_STATE apcState = { 0 };
+	__try
+	{
+		// 获取进程信息
+		if (!NT_SUCCESS(PsLookupProcessByProcessId(processId, &tProcess)))
+			return FALSE;
+		isDereferenceObject = TRUE;
+		ObDereferenceObject(tProcess);
+		isDereferenceObject = FALSE;
+		KeStackAttachProcess(tProcess, &apcState);
+		isAttachProcess = TRUE;
+		SIZE_T freeSize = 0;
+		NTSTATUS status = ZwFreeVirtualMemory(NtCurrentProcess(), &address, &freeSize, MEM_RELEASE);
+		KeUnstackDetachProcess(&apcState);
+		isAttachProcess = FALSE;
+		if (!NT_SUCCESS(status))
+			return FALSE;
+		else
+			return TRUE;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		if (isAttachProcess)
+			KeUnstackDetachProcess(&apcState);
+		if (isDereferenceObject)
+			ObDereferenceObject(tProcess);
+		return FALSE;
+	}
+}
+
+// 创建远程线程
+BOOL Utils::CreateThread(HANDLE processId, PVOID startAddress, PVOID parmaAddress)
+{
+	// 检查进程ID是否为系统进程
+	if (processId == 0 || processId == (HANDLE)4)
+		return FALSE;
+	// 检查地址
+	if ((ULONG64)startAddress < 0x10000 || (ULONG64)startAddress > 0x7FFFFFFFFFFF)
+		return FALSE;
+	if ((ULONG64)parmaAddress > 0x7FFFFFFFFFFF)   // 参数地址可以为NULL
+		return FALSE;
+	// 获取进程信息
+	PEPROCESS tProcess = NULL;
+	KAPC_STATE apcState = { 0 };
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	HANDLE threadHandle = NULL;
+	BOOLEAN isDereferenceObject = FALSE;
+	BOOLEAN isAttachProcess = FALSE;
+	BOOLEAN isCloseHandle = FALSE;
+	__try
+	{
+		if (!NT_SUCCESS(PsLookupProcessByProcessId(processId, &tProcess)))
+			return FALSE;
+		ObDereferenceObject(tProcess);
+		isDereferenceObject = TRUE;
+		KeStackAttachProcess(tProcess, &apcState);
+		isAttachProcess = TRUE;
+		status = RtlCreateUserThread(NtCurrentProcess(), NULL, FALSE, 0, 0, 0, startAddress, parmaAddress, &threadHandle, NULL);
+		if (NT_SUCCESS(status))
+		{
+			LARGE_INTEGER time = { 0 };
+			time.QuadPart = -(60ll * 10 * 1000 * 100);
+			ZwWaitForSingleObject(threadHandle, TRUE, &time);
+			// 关闭线程句柄
+			isCloseHandle = TRUE;
+			ZwClose(threadHandle);
+			isCloseHandle = FALSE;
+		}
+		KeUnstackDetachProcess(&apcState);
+		isAttachProcess = FALSE;
+		ObDereferenceObject(tProcess);
+		isDereferenceObject = FALSE;
+		if (!NT_SUCCESS(status))
+			return FALSE;
+		else
+			return TRUE;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		if (isCloseHandle)
+			ZwClose(threadHandle);
+		if (isAttachProcess)
+			KeUnstackDetachProcess(&apcState);
+		if (isDereferenceObject)
+			ObDereferenceObject(tProcess);
+		return FALSE;
+	}
+}
+
+// DLL远程线程注入
+static PVOID GetModuleExportAddress(IN PVOID moduleBase, IN PCCHAR functionName, IN PEPROCESS eProcess)
+{
+	PIMAGE_DOS_HEADER imageDosHeader = (PIMAGE_DOS_HEADER)moduleBase;
+	PIMAGE_NT_HEADERS32 imageNtHeaders32 = NULL;
+	PIMAGE_NT_HEADERS64 imageNtHeaders64 = NULL;
+	PIMAGE_EXPORT_DIRECTORY imageExportDirectory = NULL;
+	ULONG exportDirectorySize = 0;
+	ULONG_PTR functionAddress = 0;
+
+	if (moduleBase == NULL)
+	{
+		return NULL;
+	}
+
+	if (imageDosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+	{
+		return NULL;
+	}
+
+	imageNtHeaders32 = (PIMAGE_NT_HEADERS32)((PUCHAR)moduleBase + imageDosHeader->e_lfanew);
+	imageNtHeaders64 = (PIMAGE_NT_HEADERS64)((PUCHAR)moduleBase + imageDosHeader->e_lfanew);
+
+	// 判断PE结构位数
+	if (imageNtHeaders64->OptionalHeader.Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+	{
+		imageExportDirectory = (PIMAGE_EXPORT_DIRECTORY)(imageNtHeaders64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + (ULONG_PTR)moduleBase);
+		exportDirectorySize = imageNtHeaders64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+	}
+	else
+	{
+		imageExportDirectory = (PIMAGE_EXPORT_DIRECTORY)(imageNtHeaders32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress + (ULONG_PTR)moduleBase);
+		exportDirectorySize = imageNtHeaders32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size;
+	}
+
+	// 解析内存导出表
+	PUSHORT pAddressOfOrds = (PUSHORT)(imageExportDirectory->AddressOfNameOrdinals + (ULONG_PTR)moduleBase);
+	PULONG  pAddressOfNames = (PULONG)(imageExportDirectory->AddressOfNames + (ULONG_PTR)moduleBase);
+	PULONG  pAddressOfFuncs = (PULONG)(imageExportDirectory->AddressOfFunctions + (ULONG_PTR)moduleBase);
+
+	for (ULONG i = 0; i < imageExportDirectory->NumberOfFunctions; ++i)
+	{
+		USHORT ordIndex = 0xFFFF;
+		PCHAR  pName = NULL;
+
+		// 如果函数名小于等于0xFFFF 则说明是序号导出
+		if ((ULONG_PTR)functionName <= 0xFFFF)
+		{
+			ordIndex = (USHORT)i;
+		}
+
+		// 否则则说明是名字导出
+		else if ((ULONG_PTR)functionName > 0xFFFF && i < imageExportDirectory->NumberOfNames)
+		{
+			pName = (PCHAR)(pAddressOfNames[i] + (ULONG_PTR)moduleBase);
+			ordIndex = pAddressOfOrds[i];
+		}
+
+		// 未知导出函数
+		else
+		{
+			return NULL;
+		}
+
+		// 对比模块名是否是我们所需要的
+		if (((ULONG_PTR)functionName <= 0xFFFF && (USHORT)((ULONG_PTR)functionName) == ordIndex + imageExportDirectory->Base) || ((ULONG_PTR)functionName > 0xFFFF && strcmp(pName, functionName) == 0))
+		{
+			// 是则保存下来
+			functionAddress = pAddressOfFuncs[ordIndex] + (ULONG_PTR)moduleBase;
+			break;
+		}
+	}
+	return (PVOID)functionAddress;
+}
+static PVOID GetUserModuleAddress(IN PEPROCESS eProcess, IN PUNICODE_STRING moduleName, IN BOOLEAN isWow64)
+{
+	if (eProcess == NULL)
+	{
+		return NULL;
+	}
+
+	__try
+	{
+		// 定时250ms毫秒
+		LARGE_INTEGER time = { 0 };
+		time.QuadPart = -250ll * 10 * 1000;
+
+		// 32位执行
+		if (isWow64)
+		{
+			// 得到进程PEB进程环境块
+			PPEB32 peb32 = (PPEB32)PsGetProcessWow64Process(eProcess);
+			if (peb32 == NULL)
+			{
+				return NULL;
+			}
+
+			// 等待 250ms * 10
+			for (INT i = 0; !peb32->Ldr && i < 10; i++)
+			{
+				// 等待一会在执行
+				KeDelayExecutionThread(KernelMode, TRUE, &time);
+			}
+
+			// 没有找到返回空
+			if (!peb32->Ldr)
+			{
+				return NULL;
+			}
+
+			// 搜索 InLoadOrderModuleList
+			for (PLIST_ENTRY32 listEntry = (PLIST_ENTRY32)((PPEB_LDR_DATA32)peb32->Ldr)->InLoadOrderModuleList.Flink; listEntry != &((PPEB_LDR_DATA32)peb32->Ldr)->InLoadOrderModuleList; listEntry = (PLIST_ENTRY32)listEntry->Flink)
+			{
+				UNICODE_STRING unicodeString;
+				PLDR_DATA_TABLE_ENTRY32 ldrDataTableEntry32 = CONTAINING_RECORD(listEntry, LDR_DATA_TABLE_ENTRY32, InLoadOrderLinks);
+				RtlInitUnicodeString(&unicodeString, (PWCH)ldrDataTableEntry32->BaseDllName.Buffer);
+
+				// 判断模块名是否符合要求
+				if (RtlCompareUnicodeString(&unicodeString, moduleName, TRUE) == 0)
+				{
+					// 符合则返回模块基址
+					return (PVOID)ldrDataTableEntry32->DllBase;
+				}
+			}
+		}
+
+		// 64位执行
+		else
+		{
+			// 得到进程PEB进程环境块
+			PPEB64 peb = (PPEB64)PsGetProcessPeb(eProcess);
+			if (!peb)
+			{
+				return NULL;
+			}
+
+			// 等待
+			for (INT i = 0; !peb->Ldr && i < 10; i++)
+			{
+				// 将当前线程置于指定间隔的可警报或不可操作的等待状态
+				KeDelayExecutionThread(KernelMode, TRUE, &time);
+			}
+			if (!peb->Ldr)
+			{
+				return NULL;
+			}
+
+			// 遍历链表
+			for (PLIST_ENTRY listEntry = peb->Ldr->InLoadOrderModuleList.Flink; listEntry != &peb->Ldr->InLoadOrderModuleList; listEntry = listEntry->Flink)
+			{
+				PLDR_DATA_TABLE_ENTRY ldrDataTableEntry = CONTAINING_RECORD(listEntry, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
+
+				// 判断模块名是否符合要求
+				if (RtlCompareUnicodeString(&ldrDataTableEntry->BaseDllName, moduleName, TRUE) == 0)
+				{
+					// 返回模块基址
+					return ldrDataTableEntry->DllBase;
+				}
+			}
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return NULL;
+	}
+
+	return NULL;
+}
+static PVOID GetProcessAddress(HANDLE processId, PWCHAR dllName, PCCHAR functionName)
+{
+	PEPROCESS eProcess = NULL;
+	NTSTATUS status = STATUS_SUCCESS;
+	KAPC_STATE apcState;
+	PVOID refAddress = 0;
+
+	// 根据PID得到进程eProcess结构
+	status = PsLookupProcessByProcessId(processId, &eProcess);
+	if (status != STATUS_SUCCESS)
+	{
+		return 0;
+	}
+
+	// 判断目标进程是32位还是64位
+	BOOLEAN isWow64 = (PsGetProcessWow64Process(eProcess) != NULL) ? TRUE : FALSE;
+
+	// 验证地址是否可读
+	if (!MmIsAddressValid(eProcess))
+	{
+		return NULL;
+	}
+
+	// 将当前线程连接到目标进程的地址空间(附加进程)
+	KeStackAttachProcess((PRKPROCESS)eProcess, &apcState);
+
+	__try
+	{
+		UNICODE_STRING dllUnicodeString = { 0 };
+		PVOID baseAddress = NULL;
+
+		// 得到进程内模块基地址
+		RtlInitUnicodeString(&dllUnicodeString, dllName);
+
+		baseAddress = GetUserModuleAddress(eProcess, &dllUnicodeString, isWow64);
+
+		if (!baseAddress)
+		{
+			return NULL;
+		}
+
+		// 得到该函数地址
+		refAddress = GetModuleExportAddress(baseAddress, functionName, eProcess);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		return NULL;
+	}
+
+	// 取消附加
+	KeUnstackDetachProcess(&apcState);
+	return refAddress;
+}
+static BOOL RaWMemEx(HANDLE processId, PVOID address, ULONG size, PVOID buffer, UCHAR type)
+{
+	// 检查进程ID是否为系统进程
+	if (processId == 0 || processId == (HANDLE)4)
+		return FALSE;
+	// 检查地址
+	if ((ULONG64)address < 0x10000 || (ULONG64)address > 0x7FFFFFFFFFFF)
+		return FALSE;
+	// 定义变量
+	PEPROCESS tProcess = NULL;
+	PMDL mdl = NULL;
+	KAPC_STATE apcState = { 0 };
+	PVOID newMemory = NULL;
+	// 记录状态
+	BOOLEAN isDereferenceObject = FALSE;
+	BOOLEAN isAttachProcess = FALSE;
+	BOOLEAN isAllocareMdl = FALSE;
+	BOOLEAN isMapLockedPages = FALSE;
+	BOOLEAN isUnmapLockedPages = FALSE;
+	__try
+	{
+		// 获取进程信息
+		if (!NT_SUCCESS(PsLookupProcessByProcessId(processId, &tProcess)))
+			return FALSE;
+		isDereferenceObject = TRUE;
+		ObDereferenceObject(tProcess);
+		isDereferenceObject = FALSE;
+		KeStackAttachProcess(tProcess, &apcState);
+		isAttachProcess = TRUE;
+		// 创建MDL
+		mdl = IoAllocateMdl(address, size, FALSE, FALSE, NULL);
+		if (!mdl)
+		{
+			KeUnstackDetachProcess(&apcState);
+			return FALSE;
+		}
+		isAllocareMdl = TRUE;
+		// 锁定MDL
+		MmProbeAndLockPages(mdl, KernelMode, IoReadAccess);
+		isMapLockedPages = TRUE;
+		KeUnstackDetachProcess(&apcState);
+		isAttachProcess = FALSE;
+		// 映射MDL
+		newMemory = MmMapLockedPagesSpecifyCache(mdl, KernelMode, MmNonCached, NULL, FALSE, NormalPagePriority);
+		if (!newMemory)
+		{
+			MmUnlockPages(mdl);
+			IoFreeMdl(mdl);
+			return FALSE;
+		}
+		isUnmapLockedPages = TRUE;
+		// 读写内存
+		if (type == 0)
+			RtlCopyMemory(buffer, newMemory, size);
+		else
+			RtlCopyMemory(newMemory, buffer, size);
+		// 释放内存
+		MmUnmapLockedPages(newMemory, mdl);
+		isUnmapLockedPages = FALSE;
+		// 解锁MDL
+		MmUnlockPages(mdl);
+		isMapLockedPages = FALSE;
+		// 销毁MDL
+		IoFreeMdl(mdl);
+		isAllocareMdl = FALSE;
+		return TRUE;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		if (isUnmapLockedPages)
+			MmUnmapLockedPages(newMemory, mdl);
+		if (isMapLockedPages)
+			MmUnlockPages(mdl);
+		if (isAllocareMdl)
+			IoFreeMdl(mdl);
+		if (isAttachProcess)
+			KeUnstackDetachProcess(&apcState);
+		if (isDereferenceObject)
+			ObDereferenceObject(tProcess);
+		return FALSE;
+	}
+}
+BOOL Utils::InjectDll(HANDLE processId, UNICODE_STRING dllPath)
+{
+	// 检查进程ID是否为系统进程
+	if (processId == 0 || processId == (HANDLE)4)
+		return FALSE;
+	// 判断dll路径大小
+	BOOL status = FALSE;
+	ULONG size = wcslen(dllPath.Buffer) * sizeof(WCHAR);
+	// 申请一块内存用来存放DLL路径
+	PVOID newMemory = Utils::NewMem(processId, size);
+	if (newMemory == nullptr)
+		return FALSE;
+	// 写入DLL路径
+	//status = Utils::MDLWriteMemory((DWORD)processId, newMemory, size, (BYTE*)dllPath.buffer);
+	status = RaWMemEx(processId, newMemory, size, dllPath.Buffer, 1);
+	if (status == FALSE)
+	{
+		Utils::DelMem(processId, newMemory);
+		return status;
+	}
+	//// 获取LoadLibraryW地址
+	PVOID loadLibraryAddress = GetProcessAddress(processId, L"kernel32.dll", "LoadLibraryW");
+	if (loadLibraryAddress == 0)
+	{
+		Utils::DelMem(processId, newMemory);
+		return FALSE;
+	}
+	// 创建线程
+	status = Utils::CreateThread(processId, loadLibraryAddress, newMemory);
+	return status;
+	//return TRUE;
 }

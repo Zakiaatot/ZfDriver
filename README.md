@@ -42,6 +42,7 @@ static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程�
 static BOOL ProcessHide(IN DWORD pid); // 隐藏进程
 static BOOL WindowHide(IN HWND hwnd); // 隐藏窗口 反截图
 static DWORD GetProcessId(IN PCWSTR processName);// 根据进程名称获取ID
+static BOOL InjectDll(IN DWORD pid, IN PCWSTR dllPath);// DLL注入
 ```
 
 ToDo:
@@ -54,6 +55,7 @@ ToDo:
 - [x] ProcessHide 进程隐藏
 - [x] WindowHide 窗口隐藏
 - [x] GetProcessId 获取进程 ID
+- [x] InjectDll DLL 注入
 - [ ] 绘制 API
 - [ ] 多级偏移读写
 - [ ] 转易语言模块

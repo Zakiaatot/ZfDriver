@@ -25,6 +25,7 @@ namespace DispatchHandler
 	NTSTATUS ProcessHide(PHandlerContext hContext);
 	NTSTATUS WindowHide(PHandlerContext hContext);
 	NTSTATUS GetProcessId(PHandlerContext hContext);
+	NTSTATUS InjectDll(PHandlerContext hContext);
 }
 
 #endif // !_DISPATCH_HANDLER_H_

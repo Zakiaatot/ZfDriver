@@ -15,8 +15,9 @@ int main(void)
 
 	//// Write
 	//num--;
-	//ZfDriver::WriteBytes(5692, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
-	//ZfDriver::ReadBytes(5692, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
+	//DWORD pid = ZfDriver::GetProcessId(L"explorer.exe");
+	//ZfDriver::WriteBytes(pid, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
+	//ZfDriver::ReadBytes(pid, 0x000C6F38, sizeof(DWORD), (BYTE*)&num);
 	//std::cout << num << std::endl;
 
 	// Force Delete File
@@ -58,7 +59,14 @@ int main(void)
 	//}
 
 	// Get Process Id
-	std::cout << ZfDriver::GetProcessId(L"explorer.exe") << std::endl;
+	//std::cout << ZfDriver::GetProcessId(L"explorer.exe") << std::endl;
+
+	// Inject Dll
+	DWORD pid = ZfDriver::GetProcessId(L"explorer.exe");
+	if (pid > 0)
+	{
+		std::cout << ZfDriver::InjectDll(pid, L"C:\\Users\\38463\\Desktop\\test.dll") << std::endl;
+	}
 
 	ZfDriver::Uninstall();
 	system("pause");
