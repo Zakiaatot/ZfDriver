@@ -20,12 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DriverController.h" />
+    <ClInclude Include="GDI.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="ZfDriver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DriverController.cpp" />
+    <ClCompile Include="GDI.cpp" />
     <ClCompile Include="IoctlUtils.h" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Utils.cpp" />

@@ -1,6 +1,12 @@
 #include <iostream>
 #include "ZfDriver.h"
 
+
+VOID DrawLoop()
+{
+	ZfDriver::DrawFps();
+}
+
 int main(void)
 {
 	ZfDriver::Install();
@@ -62,13 +68,27 @@ int main(void)
 	//std::cout << ZfDriver::GetProcessId(L"explorer.exe") << std::endl;
 
 	// Inject Dll
-	DWORD pid = ZfDriver::GetProcessId(L"explorer.exe");
-	if (pid > 0)
+	//DWORD pid = ZfDriver::GetProcessId(L"explorer.exe");
+	//if (pid > 0)
+	//{
+	//	std::cout << ZfDriver::InjectDll(pid, L"C:\\Users\\38463\\Desktop\\test.dll") << std::endl;
+	//}
+
+	// Draw
+	HWND hwnd = FindWindowW(0, L"植物大战僵尸中文版");
+
+	BOOL init = ZfDriver::DrawInit(hwnd, DrawLoop);
+	if (init)
 	{
-		std::cout << ZfDriver::InjectDll(pid, L"C:\\Users\\38463\\Desktop\\test.dll") << std::endl;
+		std::cout << "Draw inited." << std::endl;
+		while (true)
+		{
+			Sleep(1);
+		};
 	}
 
 	ZfDriver::Uninstall();
 	system("pause");
 	return 0;
 }
+

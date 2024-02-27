@@ -3,6 +3,7 @@
 #include "Resource.h"
 #include "DriverController.h"
 #include "IoctlUtils.h"
+#include "GDI.h"
 
 #define DRIVER_FILE_NAME L"ZfDriver-R0.sys"
 #define DRIVER_SERVICE_NAME L"ZfDriver"
@@ -10,6 +11,7 @@
 
 DriverController gDriverController;
 BOOL gIsZfDriverInstalled = FALSE;
+GDI* gPGDIObject = NULL;
 
 BOOL ZfDriver::Install()
 {
@@ -290,6 +292,35 @@ BOOL ZfDriver::MouseMoveAbsolute(LONG dx, LONG dy)
 	trans.LastY = dy * 0xffff / GetSystemMetrics(SM_CYSCREEN);
 	if (!gDriverController.IoControl(IOCTL_CODE_MOU, (PVOID)&trans, sizeof(IOCTL_TRANS_MOU), NULL, 0, NULL))
 		return FALSE;
+	return TRUE;
+}
+
+BOOL ZfDriver::DrawInit(HWND hwnd, DRAW_LOOP drawLoop, INT fontSize)
+{
+	if (gIsZfDriverInstalled == FALSE || !IsWindow(hwnd))
+		return FALSE;
+	if (gPGDIObject)
+	{
+		delete gPGDIObject;
+		gPGDIObject = NULL;
+	}
+	gPGDIObject = new GDI(hwnd, drawLoop, fontSize);
+	return gPGDIObject->IsInited();
+}
+
+BOOL ZfDriver::DrawText(LONG x, LONG y, LPCWSTR str, COLORREF color, INT fontSize)
+{
+	if (gPGDIObject == NULL)
+		return FALSE;
+	gPGDIObject->DrawText(x, y, str, color, fontSize);
+	return TRUE;
+}
+
+BOOL ZfDriver::DrawFps()
+{
+	if (gPGDIObject == NULL)
+		return FALSE;
+	gPGDIObject->DrawFps();
 	return TRUE;
 }
 

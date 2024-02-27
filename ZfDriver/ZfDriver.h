@@ -2,6 +2,9 @@
 #define _ZFDRIVER_H_
 
 #include <Windows.h>
+#undef DrawText
+
+typedef VOID(*DRAW_LOOP)();
 
 class ZfDriver
 {
@@ -39,6 +42,10 @@ public:
 	static BOOL MouseMiddleButtonUp();
 	static BOOL MouseMoveRelative(LONG dx, LONG dy);
 	static BOOL MouseMoveAbsolute(LONG dx, LONG dy);
+	// Draw
+	static BOOL DrawInit(HWND hwnd, DRAW_LOOP drawLoop, INT fontSize = 16); // 初始化绘制
+	static BOOL DrawText(LONG x, LONG y, LPCWSTR str, COLORREF color, INT fontSize = 16); // 绘制文本
+	static BOOL DrawFps();
 	// Utils
 	static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath 为宽字符路径  例如 L"C:\\123.exe"
 	static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址
