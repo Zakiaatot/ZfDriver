@@ -12,9 +12,9 @@ private:
 	ZfDriver() = default;
 	~ZfDriver() = default;
 public:
-	static BOOL Install();
-	static VOID Uninstall();
-	static DWORD Test(IN DWORD num); // 测试: 如果正常 返回 num+1
+	static BOOL Install(); // 驱动安装
+	static VOID Uninstall(); // 驱动卸载
+	static DWORD Test(IN DWORD num); // 驱动测试: 如果正常 返回 num+1
 	// Read
 	static BOOL ReadBytes(IN DWORD pid, IN DWORD64 address, IN DWORD size, OUT BYTE* data); // 读字节集: data需自己申请空间且确保空间大于size
 	static BOOL ReadByte(IN DWORD pid, IN DWORD64 address, OUT BYTE* data); // 读字节
@@ -32,20 +32,24 @@ public:
 	static BOOL WriteFloat(IN DWORD pid, IN DWORD64 address, IN FLOAT data); // 写小数
 	static BOOL WriteDouble(IN DWORD pid, IN DWORD64 address, IN DOUBLE data); // 写双精度小数
 	// Keyboard and Mouse
-	static BOOL KeyDown(IN USHORT keyCode);
-	static BOOL keyUp(IN USHORT keyCode);
-	static BOOL MouseLeftButtonDown();
-	static BOOL MouseLeftButtonUp();
-	static BOOL MouseRightButtonDown();
-	static BOOL MouseRightButtonUp();
-	static BOOL MouseMiddleButtonDown();
-	static BOOL MouseMiddleButtonUp();
-	static BOOL MouseMoveRelative(LONG dx, LONG dy);
-	static BOOL MouseMoveAbsolute(LONG dx, LONG dy);
+	static BOOL KeyDown(IN USHORT keyCode); // 键盘按下
+	static BOOL keyUp(IN USHORT keyCode); // 键盘弹起
+	static BOOL MouseLeftButtonDown(); // 鼠标左键按下
+	static BOOL MouseLeftButtonUp(); // 鼠标左键弹起
+	static BOOL MouseRightButtonDown(); // 鼠标右键按下
+	static BOOL MouseRightButtonUp(); // 鼠标右键弹起
+	static BOOL MouseMiddleButtonDown(); // 鼠标滚轮按下
+	static BOOL MouseMiddleButtonUp(); // 鼠标滚轮弹起
+	static BOOL MouseMoveRelative(IN LONG dx, IN LONG dy); // 鼠标相对移动
+	static BOOL MouseMoveAbsolute(IN LONG dx, IN LONG dy); // 鼠标绝对移动
 	// Draw
-	static BOOL DrawInit(HWND hwnd, DRAW_LOOP drawLoop, INT fontSize = 16); // 初始化绘制
-	static BOOL DrawText(LONG x, LONG y, LPCWSTR str, COLORREF color, INT fontSize = 16); // 绘制文本
-	static BOOL DrawFps();
+	static BOOL DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize = 16); // 初始化绘制
+	static BOOL DrawFps(); // 绘制FPS
+	static BOOL DrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN COLORREF color, IN INT fontSize = 16); // 绘制文本
+	static BOOL DrawLine(IN LONG x1, IN LONG y1, IN  LONG x2, IN  LONG y2, IN LONG lineWidth, IN  COLORREF color); // 绘制线条
+	static BOOL DrawRect(IN LONG x, IN LONG y, IN LONG width, IN  LONG height, IN  LONG lineWidth, IN COLORREF color); // 绘制矩形
+	static BOOL DrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN COLORREF color); // 填充矩形
+	static BOOL DrawCircle(IN LONG x, IN LONG y, IN LONG r, IN COLORREF color, IN LONG lineCount, IN LONG lineWidth); // 绘制圆圈
 	// Utils
 	static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath 为宽字符路径  例如 L"C:\\123.exe"
 	static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址

@@ -5,6 +5,10 @@
 VOID DrawLoop()
 {
 	ZfDriver::DrawFps();
+	ZfDriver::DrawRect(100, 100, 100, 100, 2, RGB(255, 0, 0));
+	ZfDriver::DrawRectFill(500, 500, 200, 200, RGB(0, 0, 255));
+	ZfDriver::DrawCircle(300, 100, 50, RGB(0, 255, 0), 8, 2);
+	ZfDriver::DrawLine(300, 100, 500, 500, 5, RGB(255, 0, 0));
 }
 
 int main(void)
@@ -75,9 +79,7 @@ int main(void)
 	//}
 
 	// Draw
-	HWND hwnd = FindWindowW(0, L"植物大战僵尸中文版");
-
-	BOOL init = ZfDriver::DrawInit(hwnd, DrawLoop);
+	BOOL init = ZfDriver::DrawInit(DrawLoop);
 	if (init)
 	{
 		std::cout << "Draw inited." << std::endl;

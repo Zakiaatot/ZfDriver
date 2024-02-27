@@ -1,18 +1,25 @@
 #include <sstream>
-#include <iostream>
+#include <cmath>
 #include "GDI.h"
 
 #pragma comment (lib,"Winmm.lib")
 
-static VOID HandleEvent()
+#define PI acos(-1)
+
+static LRESULT CALLBACK WindowProc
+(
+	IN HWND hwnd,
+	IN UINT uMsg,
+	IN WPARAM wParam,
+	IN LPARAM lParam
+)
 {
-	if (!GetInputState())
-		return;
-	MSG message;
-	while (::GetMessage(&message, NULL, 0, 0)) {
-		::TranslateMessage(&message);
-		::DispatchMessage(&message);
+	if (uMsg == 2)
+	{
+		PostQuitMessage(0);
+		return 0;
 	}
+	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
 static DOUBLE GetScreenScale() {
@@ -26,20 +33,60 @@ static DOUBLE GetScreenScale() {
 	return scale;
 }
 
-GDI::GDI(HWND hwnd, SUB_FUNC subFunc, INT fontSize)
-	:hwnd_(hwnd),
+GDI::GDI(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
+	:hwnd_(0),
 	subFunc_(subFunc),
 	fontSize_(fontSize),
-	width_(0),
-	height_(0),
+	brush_(0),
+	width_(width),
+	height_(height),
 	hdc_(0),
 	device_(0),
 	object_(0),
 	inited_(FALSE),
 	fps_({ 0 })
 {
-	hdc_ = GetDC(hwnd);
-	SetLayeredWindowAttributes(hwnd, GetBkColor(hdc_), 255, 3);
+	brush_ = CreateSolidBrush(TRANSPARENT);
+	WNDCLASSEX window = { 0 };
+	window.cbSize = sizeof(WNDCLASSEX);
+	window.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+	window.hIcon = 0;
+	window.hCursor = 0;
+	window.hInstance = (HINSTANCE)123456789;
+	window.hbrBackground = brush_;
+	window.hIconSm = 0;
+	window.lpfnWndProc = WindowProc;
+	window.lpszClassName = L"Microsoft Edge";
+	window.lpszMenuName = L"ZfDriver GDI";
+	RegisterClassEx(&window);
+	DWORD dwStyle = WS_CAPTION | WS_POPUP | WS_THICKFRAME;
+
+	hwnd_ = CreateWindowExW
+	(
+		WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED | WS_EX_TOOLWINDOW,
+		window.lpszClassName,
+		window.lpszMenuName,
+		WS_POPUP | WS_OVERLAPPED | WS_SYSMENU | WS_TABSTOP | WS_MINIMIZEBOX | WS_CLIPCHILDREN,
+		0,
+		0,
+		width_,
+		height_,
+		0,
+		0,
+		window.hInstance,
+		0
+	);
+
+	dwStyle = GetWindowLongA(hwnd_, GWL_EXSTYLE);
+	dwStyle = dwStyle | WS_EX_TRANSPARENT | WS_EX_LAYERED;
+	SetWindowLongA(hwnd_, GWL_EXSTYLE, dwStyle);
+
+
+	hdc_ = GetDC(hwnd_);
+	SetLayeredWindowAttributes(hwnd_, GetBkColor(hdc_), 255, 3);
+	ShowWindow(hwnd_, 10);
+	UpdateWindow(hwnd_);
+	DeleteObject(brush_);
 	CreateThread(0, 0, GDI::FuncLoop, this, 0, 0);
 	inited_ = TRUE;
 }
@@ -54,33 +101,22 @@ DWORD GDI::FuncLoop(LPVOID pGDIObject)
 {
 	GDI* obj = (GDI*)pGDIObject;
 	DOUBLE scale = GetScreenScale();
-	while (IsWindow(obj->hwnd_))
+	while (obj->subFunc_)
 	{
-		RECT rc = { 0 };
-		GetWindowRect(obj->hwnd_, &rc);
-		obj->width_ = (rc.right - rc.left) * scale;
-		obj->height_ = (rc.bottom - rc.top) * scale;
 
-		std::cout << "Func Loop" << std::endl;
 		Sleep(1);
-		HandleEvent();
-		std::cout << "Width: " << obj->width_ << " Height: " << obj->height_ << std::endl;
+
 		HBITMAP bmp = CreateCompatibleBitmap(obj->hdc_, obj->width_, obj->height_);
 		obj->device_ = CreateCompatibleDC(obj->hdc_);
 		SelectObject(obj->device_, bmp);
 		BitBlt(obj->device_, 0, 0, obj->width_, obj->height_, 0, 0, 0, WHITENESS);
-		if (obj->device_ == 0)
-			break;
-		if (obj->subFunc_ != NULL)
-		{
-			std::cout << "Sub Func" << std::endl;
-			obj->subFunc_();
-		}
+
+		obj->subFunc_();
+
 		BitBlt(obj->hdc_, 0, 0, obj->width_, obj->height_, obj->device_, 0, 0, SRCCOPY);
 		DeleteDC(obj->device_);
 		DeleteObject(bmp);
 	}
-	std::cout << "Func Loop Exited." << std::endl;
 	return ReleaseDC(obj->hwnd_, obj->hdc_);
 }
 
@@ -111,10 +147,57 @@ VOID GDI::DrawText(LONG x, LONG y, LPCWSTR str, COLORREF color, INT fontSize)
 	DeleteObject(hFont);
 }
 
+VOID GDI::DrawLine(LONG x1, LONG y1, LONG x2, LONG y2, LONG lineWidth, COLORREF color)
+{
+	HPEN hPen = CreatePen(PS_SOLID, lineWidth, color);
+	HGDIOBJ object = SelectObject(device_, hPen);
+	MoveToEx(device_, x1, y1, 0);
+	LineTo(device_, x2, y2);
+	SelectObject(device_, object);
+	DeleteObject(hPen);
+}
+
+VOID GDI::DrawRect(LONG x, LONG y, LONG width, LONG height, LONG lineWidth, COLORREF color)
+{
+	RECT rc = { x,y,x + width,y + height };
+	HPEN hPen = CreatePen(PS_SOLID, lineWidth, color);
+	HGDIOBJ object = SelectObject(device_, hPen);
+	Rectangle(device_, rc.left, rc.top, rc.right, rc.bottom);
+	SelectObject(device_, object);
+	DeleteObject(hPen);
+}
+
+VOID GDI::DrawCircle(LONG x, LONG y, LONG r, COLORREF color, LONG lineCount, LONG lineWidth)
+{
+	FLOAT step = PI * 2 / lineCount;
+	FLOAT size = r;
+	FLOAT tmp = 0;
+	FLOAT x1, y1, x2, y2;
+	for (; lineCount > 0; lineCount--)
+	{
+		x1 = size * cos(tmp) + x;
+		y1 = size * sin(tmp) + y;
+		x2 = size * cos(tmp + step) + x;
+		y2 = size * sin(tmp + step) + y;
+		tmp += step;
+		GDI::DrawLine(x1, y1, x2, y2, lineWidth, color);
+	}
+}
+
+VOID GDI::FillRect(LONG x, LONG y, LONG width, LONG height, COLORREF color)
+{
+	RECT rc = { x,y,x + width,y + height };
+	HBRUSH hBrush = CreateSolidBrush(color);
+	HGDIOBJ object = SelectObject(device_, hBrush);
+	Rectangle(device_, rc.left, rc.top, rc.right, rc.bottom);
+	SelectObject(device_, object);
+	DeleteObject(hBrush);
+}
+
 
 VOID GDI::DrawFps()
 {
 	std::wstringstream wss;
-	wss << L"GDI FPS: " << GDI::GetFps();
-	GDI::DrawText(10, 10, wss.str().c_str(), RGB(0, 255, 0), 24);
+	wss << L"FPS: " << GDI::GetFps();
+	GDI::DrawText(20, 20, wss.str().c_str(), RGB(0, 255, 0), 24);
 }

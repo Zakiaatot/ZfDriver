@@ -15,14 +15,19 @@ typedef struct {
 class GDI
 {
 public:
-	GDI(HWND hwnd, SUB_FUNC subFunc, INT fontSize);
+	GDI(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize = 16);
 	~GDI();
 
 public:
 	INT GetFps();
-	VOID DrawText(LONG x, LONG y, LPCWSTR str, COLORREF color, INT fontSize = 0);
 	VOID DrawFps();
+	VOID DrawText(LONG x, LONG y, LPCWSTR str, COLORREF color, INT fontSize = 0);
+	VOID DrawLine(LONG x1, LONG y1, LONG x2, LONG y2, LONG lineWidth, COLORREF color);
+	VOID DrawRect(LONG x, LONG y, LONG width, LONG height, LONG lineWidth, COLORREF color);
+	VOID DrawCircle(LONG x, LONG y, LONG r, COLORREF color, LONG lineCount, LONG lineWidth);
+	VOID FillRect(LONG x, LONG y, LONG width, LONG height, COLORREF color);
 public:
+	HWND GetHwnd() const { return hwnd_; };
 	BOOL IsInited() const { return inited_; };
 
 private:
@@ -34,6 +39,7 @@ private:
 	HWND hwnd_;
 	SUB_FUNC subFunc_;
 	INT fontSize_;
+	HBRUSH brush_;
 	LONG width_;
 	LONG height_;
 	HDC hdc_;
