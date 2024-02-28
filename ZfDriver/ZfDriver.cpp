@@ -1,3 +1,5 @@
+#define DLLEXPORT
+
 #include "ZfDriver.h"
 #include "Utils.h"
 #include "Resource.h"

@@ -68,6 +68,6 @@ ToDo:
 - [x] GetProcessId 获取进程 ID
 - [x] InjectDll DLL 注入
 - [x] 绘制 API
-- [ ] 打包为 Lib 和 Dll
+- [x] 打包为 Lib 和 Dll
 - [ ] 转易语言模块
 - [ ] 驱动隐藏

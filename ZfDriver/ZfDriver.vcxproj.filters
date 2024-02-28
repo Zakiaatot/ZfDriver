@@ -20,10 +20,10 @@
     <ClInclude Include="DriverController.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="GDI.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="GDI.h">
+    <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

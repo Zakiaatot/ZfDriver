@@ -17,8 +17,9 @@ bool Utils::ReleaseResource
 
 	do
 	{
+		HMODULE hMod = GetModuleHandle(L"ZfDriver.dll"); // 如果是 EXE 则 hMod 直接为 NULL
 		// Find Resource
-		HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCE(uResourceId), szResourceType);
+		HRSRC hRsrc = FindResource(hMod, MAKEINTRESOURCE(uResourceId), szResourceType);
 		if (hRsrc == NULL)
 		{
 			msg = L"Find Resource Error!";
@@ -26,7 +27,7 @@ bool Utils::ReleaseResource
 		}
 
 		// Get Resource Size
-		DWORD dwSize = SizeofResource(NULL, hRsrc);
+		DWORD dwSize = SizeofResource(hMod, hRsrc);
 		if (dwSize <= 0)
 		{
 			msg = L"Get Resource Error!";
@@ -34,7 +35,7 @@ bool Utils::ReleaseResource
 		}
 
 		// Load Resource
-		HGLOBAL hGlobal = LoadResource(NULL, hRsrc);
+		HGLOBAL hGlobal = LoadResource(hMod, hRsrc);
 		if (hGlobal == NULL)
 		{
 			msg = L"Load Resource Error!";
