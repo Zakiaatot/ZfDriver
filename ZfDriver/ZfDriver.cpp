@@ -317,6 +317,22 @@ BOOL ZfDriver::DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
 	return gPGDIObject->IsInited();
 }
 
+BOOL ZfDriver::DrawDestroy()
+{
+	if (gIsZfDriverInstalled == FALSE)
+		return FALSE;
+	if (gPGDIObject)
+	{
+		delete gPGDIObject;
+		gPGDIObject = NULL;
+	}
+	else
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
 BOOL ZfDriver::DrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN COLORREF color, IN INT fontSize)
 {
 	if (gPGDIObject == NULL)
