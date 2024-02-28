@@ -22,6 +22,16 @@ static LRESULT CALLBACK WindowProc
 	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
+static VOID HandleEvent()
+{
+	MSG msg = { 0 };
+	while (PeekMessageW(&msg, 0, 0, 0, 1) != 0)
+	{
+		DispatchMessageW(&msg);
+		TranslateMessage(&msg);
+	}
+}
+
 static DOUBLE GetScreenScale() {
 	INT screenW = ::GetSystemMetrics(SM_CXSCREEN);
 	INT screenH = ::GetSystemMetrics(SM_CYSCREEN);
@@ -94,18 +104,23 @@ GDI::GDI(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
 GDI::~GDI()
 {
 	if (inited_)
+	{
 		ShowWindowAsync(hwnd_, 0);
+		DeleteDC(device_);
+		ReleaseDC(hwnd_, hdc_);
+		DestroyWindow(hwnd_);
+	}
 }
 
 DWORD GDI::FuncLoop(LPVOID pGDIObject)
 {
 	GDI* obj = (GDI*)pGDIObject;
 	DOUBLE scale = GetScreenScale();
+	timeBeginPeriod(1);
 	while (obj->subFunc_)
 	{
-
 		Sleep(1);
-
+		HandleEvent();
 		HBITMAP bmp = CreateCompatibleBitmap(obj->hdc_, obj->width_, obj->height_);
 		obj->device_ = CreateCompatibleDC(obj->hdc_);
 		SelectObject(obj->device_, bmp);
@@ -117,6 +132,7 @@ DWORD GDI::FuncLoop(LPVOID pGDIObject)
 		DeleteDC(obj->device_);
 		DeleteObject(bmp);
 	}
+	timeEndPeriod(1);
 	return ReleaseDC(obj->hwnd_, obj->hdc_);
 }
 
