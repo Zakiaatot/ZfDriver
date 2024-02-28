@@ -45,6 +45,7 @@ static DOUBLE GetScreenScale() {
 
 GDI::GDI(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
 	:hwnd_(0),
+	drawThreadHandle_(0),
 	subFunc_(subFunc),
 	fontSize_(fontSize),
 	brush_(0),
@@ -97,7 +98,7 @@ GDI::GDI(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
 	ShowWindow(hwnd_, 10);
 	UpdateWindow(hwnd_);
 	DeleteObject(brush_);
-	CreateThread(0, 0, GDI::FuncLoop, this, 0, 0);
+	drawThreadHandle_ = CreateThread(0, 0, GDI::FuncLoop, this, 0, 0);
 	inited_ = TRUE;
 }
 
@@ -106,9 +107,8 @@ GDI::~GDI()
 	if (inited_)
 	{
 		ShowWindowAsync(hwnd_, 0);
-		DeleteDC(device_);
-		ReleaseDC(hwnd_, hdc_);
-		DestroyWindow(hwnd_);
+		if (drawThreadHandle_)
+			CloseHandle(drawThreadHandle_);
 	}
 }
 
@@ -119,7 +119,7 @@ DWORD GDI::FuncLoop(LPVOID pGDIObject)
 	timeBeginPeriod(1);
 	while (obj->subFunc_)
 	{
-		Sleep(1);
+		Sleep(5);
 		HandleEvent();
 		HBITMAP bmp = CreateCompatibleBitmap(obj->hdc_, obj->width_, obj->height_);
 		obj->device_ = CreateCompatibleDC(obj->hdc_);

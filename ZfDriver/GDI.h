@@ -37,6 +37,7 @@ private:
 	static DWORD FuncLoop(LPVOID pGDIObject);
 private:
 	HWND hwnd_;
+	HANDLE drawThreadHandle_;
 	SUB_FUNC subFunc_;
 	INT fontSize_;
 	HBRUSH brush_;
