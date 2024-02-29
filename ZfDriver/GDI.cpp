@@ -119,7 +119,7 @@ DWORD GDI::FuncLoop(LPVOID pGDIObject)
 	timeBeginPeriod(1);
 	while (obj->subFunc_)
 	{
-		Sleep(5);
+		Sleep(1);
 		HandleEvent();
 		HBITMAP bmp = CreateCompatibleBitmap(obj->hdc_, obj->width_, obj->height_);
 		obj->device_ = CreateCompatibleDC(obj->hdc_);
