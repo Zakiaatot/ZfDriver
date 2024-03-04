@@ -273,6 +273,7 @@ typedef struct _SYSTEM_PROCESS_INFORMATION
 
 // GLOBAL
 INT64(*gGreProtectSpriteContent)(INT64, UINT64, INT32, CHAR) = NULL;
+PEPROCESS gHidedProcess = NULL;
 
 // MDL¶Á
 BOOL Utils::MDLReadMemory(IN DWORD pid, IN PVOID address, IN DWORD size, OUT BYTE* data)
@@ -582,24 +583,44 @@ static DWORD FindEprocessActiveProcessLinksOffset() // »ñÈ¡ActiveProcessLinksÆ«Ò
 	DbgPrint("[ZfDriver] Activeprocesslinks Offset: 0x%x", ofs);
 	return ofs;
 }
-BOOL Utils::ProcessHide(IN DWORD pid)
+BOOL Utils::ProcessHide(IN DWORD pid, IN BOOL hide)
 {
-	PEPROCESS pEProcess = NULL;
 
-	PsLookupProcessByProcessId((HANDLE)pid, &pEProcess);
-	if (pEProcess == NULL)
-	{
-		return FALSE;
-	}
+	// ¶ÏÁ´°æ À¶ÆÁ£¿
+	//static DWORD offset = FindEprocessActiveProcessLinksOffset();
+	//PLIST_ENTRY listEntry = (PLIST_ENTRY)((DWORD64)pEProcess + offset);
+
+	//listEntry->Flink->Blink = listEntry->Blink;
+	//listEntry->Blink->Flink = listEntry->Flink;
+	//listEntry->Flink = listEntry;
+	//listEntry->Blink = listEntry;
+
+	// ÐÞ¸ÄID°æ
 	static DWORD offset = FindEprocessActiveProcessLinksOffset();
-	PLIST_ENTRY listEntry = (PLIST_ENTRY)((DWORD64)pEProcess + offset);
-
-	listEntry->Flink->Blink = listEntry->Blink;
-	listEntry->Blink->Flink = listEntry->Flink;
-	listEntry->Flink = listEntry;
-	listEntry->Blink = listEntry;
-
-	return TRUE;
+	if (hide)
+	{
+		if (gHidedProcess)
+			return FALSE;
+		PEPROCESS pEProcess = NULL;
+		PsLookupProcessByProcessId((HANDLE)pid, &pEProcess);
+		if (pEProcess == NULL)
+		{
+			return FALSE;
+		}
+		PHANDLE processIdAddress = (PHANDLE)((ULONG64)pEProcess + offset - sizeof(PVOID));
+		*processIdAddress = 0;
+		gHidedProcess = pEProcess;
+		return TRUE;
+	}
+	else
+	{
+		if (!gHidedProcess)
+			return FALSE;
+		PHANDLE processIdAddress = (PHANDLE)((ULONG64)gHidedProcess + offset - sizeof(PVOID));
+		*processIdAddress = (HANDLE)pid;
+		gHidedProcess = NULL;
+		return TRUE;
+	}
 }
 
 // ´°¿ÚÒþ²Ø

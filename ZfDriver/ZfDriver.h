@@ -61,7 +61,7 @@ public:
 	// Utils
 	static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath 为宽字符路径  例如 L"C:\\123.exe"
 	static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址
-	static BOOL ProcessHide(IN DWORD pid); // 隐藏进程
+	static BOOL ProcessHide(IN DWORD pid, IN BOOL hide = TRUE); // 隐藏进程  hide==0时回复隐藏  Warning: 如果要用绘制，请先初始化绘制模块再隐藏进程
 	static BOOL WindowHide(IN HWND hwnd); // 隐藏窗口 反截图
 	static DWORD GetProcessId(IN PCWSTR processName);// 根据进程名称获取ID
 	static BOOL InjectDll(IN DWORD pid, IN PCWSTR dllPath);// DLL注入

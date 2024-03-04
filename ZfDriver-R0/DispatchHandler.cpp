@@ -127,8 +127,8 @@ NTSTATUS DispatchHandler::MOU(PHandlerContext hContext)
 NTSTATUS DispatchHandler::ProcessHide(PHandlerContext hContext)
 {
 	DbgPrint("[ZfDriver] Process Hide");
-	DWORD pid = *(PDWORD)hContext->pIoBuffer;
-	if (Utils::ProcessHide(pid))
+	IOCTL_TRANS_PROCESS_HIDE* pTrans = (IOCTL_TRANS_PROCESS_HIDE*)hContext->pIoBuffer;
+	if (Utils::ProcessHide(pTrans->pid, pTrans->hide))
 		return STATUS_SUCCESS;
 	else
 		return STATUS_UNSUCCESSFUL;

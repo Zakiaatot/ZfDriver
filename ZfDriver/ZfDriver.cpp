@@ -156,7 +156,7 @@ BOOL ZfDriver::ForceDeleteFile(IN PCWSTR filePath)
 {
 	if (gIsZfDriverInstalled == FALSE)
 		return FALSE;
-	if (!gDriverController.IoControl(IOCTL_CODE_FORCE_DELETE_FILE, (PVOID)filePath, (wcslen(filePath) + 1) * sizeof(WCHAR), NULL, 0, NULL))
+	if (!gDriverController.IoControl(IOCTL_CODE_FORCE_DELETE_FILE, (PVOID)filePath, (DWORD)(wcslen(filePath) + 1) * sizeof(WCHAR), NULL, 0, NULL))
 		return FALSE;
 	return TRUE;
 }
@@ -174,7 +174,7 @@ DWORD64 ZfDriver::GetModuleBase(IN DWORD pid, IN PCWSTR moduleName)
 	(
 		IOCTL_CODE_GET_MODULE_BASE,
 		pTrans,
-		sizeof(IOCTL_TRANS_GET_MODULE_BASE) + (wcslen(moduleName) + 1) * sizeof(WCHAR),
+		(DWORD)sizeof(IOCTL_TRANS_GET_MODULE_BASE) + (DWORD)(wcslen(moduleName) + 1) * sizeof(WCHAR),
 		&base,
 		sizeof(DWORD64),
 		NULL
@@ -381,11 +381,14 @@ BOOL ZfDriver::DrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG height,
 	return TRUE;
 }
 
-BOOL ZfDriver::ProcessHide(IN DWORD pid)
+BOOL ZfDriver::ProcessHide(IN DWORD pid, IN BOOL hide)
 {
 	if (gIsZfDriverInstalled == FALSE)
 		return FALSE;
-	if (!gDriverController.IoControl(IOCTL_CODE_PROCESS_HIDE, (PVOID)&pid, sizeof(DWORD), NULL, 0, NULL))
+	IOCTL_TRANS_PROCESS_HIDE  trans = { 0 };
+	trans.pid = pid;
+	trans.hide = hide;
+	if (!gDriverController.IoControl(IOCTL_CODE_PROCESS_HIDE, (PVOID)&trans, sizeof(IOCTL_TRANS_PROCESS_HIDE), NULL, 0, NULL))
 		return FALSE;
 	return TRUE;
 }
@@ -404,7 +407,7 @@ DWORD ZfDriver::GetProcessId(IN PCWSTR processName)
 	if (gIsZfDriverInstalled == FALSE)
 		return 0;
 	DWORD id = 0;
-	if (!gDriverController.IoControl(IOCTL_CODE_GET_PROCESS_ID, (PVOID)processName, (wcslen(processName) + 1) * sizeof(WCHAR), &id, sizeof(DWORD), NULL))
+	if (!gDriverController.IoControl(IOCTL_CODE_GET_PROCESS_ID, (PVOID)processName, (DWORD)(wcslen(processName) + 1) * sizeof(WCHAR), &id, sizeof(DWORD), NULL))
 		return 0;
 	return id;
 }
@@ -422,7 +425,7 @@ BOOL ZfDriver::InjectDll(IN DWORD pid, IN PCWSTR dllPath)
 		(
 			IOCTL_CODE_INJECT_DLL,
 			pTrans,
-			sizeof(IOCTL_CODE_INJECT_DLL) + (wcslen(dllPath) + 1) * sizeof(WCHAR),
+			(DWORD)sizeof(IOCTL_CODE_INJECT_DLL) + (DWORD)(wcslen(dllPath) + 1) * sizeof(WCHAR),
 			NULL,
 			0,
 			NULL

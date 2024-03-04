@@ -70,4 +70,9 @@ struct IOCTL_TRANS_INJECT_DLL
 	BYTE dllPath[0];
 };
 
+struct IOCTL_TRANS_PROCESS_HIDE
+{
+	DWORD pid;
+	BOOL hide;
+};
 #endif // !_IOCTL_UTILS_H_

@@ -139,14 +139,14 @@ DWORD GDI::FuncLoop(LPVOID pGDIObject)
 INT GDI::GetFps()
 {
 	fps_.curFrames++;
-	fps_.curTime = timeGetTime() * 0.001;
+	fps_.curTime = timeGetTime() * (FLOAT)0.001;
 	if (fps_.curTime - fps_.lastTime > 1)
 	{
 		fps_.retFps = fps_.curFrames / (fps_.curTime - fps_.lastTime);
 		fps_.lastTime = fps_.curTime;
 		fps_.curFrames = 0;
 	}
-	return fps_.retFps;
+	return (INT)fps_.retFps;
 }
 
 VOID GDI::DrawText(LONG x, LONG y, LPCWSTR str, COLORREF color, INT fontSize)
@@ -158,7 +158,7 @@ VOID GDI::DrawText(LONG x, LONG y, LPCWSTR str, COLORREF color, INT fontSize)
 	SetBkColor(device_, RGB(0, 0, 0));
 	SetBkMode(device_, 1);
 	object_ = SelectObject(device_, hFont);
-	TextOutW(device_, x, y, str, wcslen(str));
+	TextOutW(device_, x, y, str, (INT)wcslen(str));
 	SelectObject(device_, object_);
 	DeleteObject(hFont);
 }
@@ -185,8 +185,8 @@ VOID GDI::DrawRect(LONG x, LONG y, LONG width, LONG height, LONG lineWidth, COLO
 
 VOID GDI::DrawCircle(LONG x, LONG y, LONG r, COLORREF color, LONG lineCount, LONG lineWidth)
 {
-	FLOAT step = PI * 2 / lineCount;
-	FLOAT size = r;
+	FLOAT step = (FLOAT)PI * 2 / lineCount;
+	FLOAT size = (FLOAT)r;
 	FLOAT tmp = 0;
 	FLOAT x1, y1, x2, y2;
 	for (; lineCount > 0; lineCount--)
@@ -196,7 +196,7 @@ VOID GDI::DrawCircle(LONG x, LONG y, LONG r, COLORREF color, LONG lineCount, LON
 		x2 = size * cos(tmp + step) + x;
 		y2 = size * sin(tmp + step) + y;
 		tmp += step;
-		GDI::DrawLine(x1, y1, x2, y2, lineWidth, color);
+		GDI::DrawLine((LONG)x1, (LONG)y1, (LONG)x2, (LONG)y2, lineWidth, color);
 	}
 }
 

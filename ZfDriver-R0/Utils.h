@@ -10,7 +10,7 @@ namespace Utils
 	BOOL ForceDeleteFile(IN UNICODE_STRING pwzFileName);
 	DWORD64 GetModuleBaseWow64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName);
 	DWORD64 GetModuleBase64(IN PEPROCESS pEProcess, IN UNICODE_STRING moduleName);
-	BOOL ProcessHide(IN DWORD pid);
+	BOOL ProcessHide(IN DWORD pid, IN BOOL hide = TRUE);
 	BOOL WindowHide(IN HWND hwnd);
 	DWORD GetProcessId(IN UNICODE_STRING processName);
 	PVOID NewMem(IN HANDLE processId, IN ULONG size);
