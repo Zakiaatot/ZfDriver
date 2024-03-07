@@ -297,7 +297,7 @@ BOOL ZfDriver::MouseMoveAbsolute(IN LONG dx, IN LONG dy)
 	return TRUE;
 }
 
-BOOL ZfDriver::DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
+BOOL ZfDriver::DrawInit(IN DRAW_LOOP drawLoop, IN LONG width, IN LONG height, IN INT fontSize)
 {
 	if (gIsZfDriverInstalled == FALSE)
 		return FALSE;
@@ -306,8 +306,8 @@ BOOL ZfDriver::DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
 		delete gPGDIObject;
 		gPGDIObject = NULL;
 	}
-	INT width = GetSystemMetrics(SM_CXSCREEN);
-	INT height = GetSystemMetrics(SM_CYSCREEN);
+	/*INT width = GetSystemMetrics(SM_CXSCREEN);
+	INT height = GetSystemMetrics(SM_CYSCREEN);*/
 	gPGDIObject = new GDI(width, height, drawLoop, fontSize);
 	HWND hwnd = gPGDIObject->GetHwnd();
 	if (hwnd)
