@@ -306,9 +306,9 @@ BOOL ZfDriver::DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
 		delete gPGDIObject;
 		gPGDIObject = NULL;
 	}
+	SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
 	INT width = GetSystemMetrics(SM_CXSCREEN);
 	INT height = GetSystemMetrics(SM_CYSCREEN);
-	SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
 	gPGDIObject = new GDI(width, height, drawLoop, fontSize);
 	HWND hwnd = gPGDIObject->GetHwnd();
 	if (hwnd)
