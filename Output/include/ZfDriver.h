@@ -50,7 +50,7 @@ public:
 	static BOOL MouseMoveRelative(IN LONG dx, IN LONG dy); // 鼠标相对移动
 	static BOOL MouseMoveAbsolute(IN LONG dx, IN LONG dy); // 鼠标绝对移动
 	// Draw
-	static BOOL DrawInit(IN DRAW_LOOP drawLoop, IN LONG width, IN LONG height, IN INT fontSize = 16); // 初始化绘制
+	static BOOL DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize = 16); // 初始化绘制
 	static BOOL DrawDestroy(); // 结束绘制
 	static BOOL DrawFps(); // 绘制FPS
 	static BOOL DrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN COLORREF color, IN INT fontSize = 16); // 绘制文本
