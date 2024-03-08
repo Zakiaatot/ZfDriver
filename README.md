@@ -39,15 +39,15 @@ static BOOL MouseMiddleButtonDown(); // 鼠标滚轮按下
 static BOOL MouseMiddleButtonUp(); // 鼠标滚轮弹起
 static BOOL MouseMoveRelative(IN LONG dx, IN LONG dy); // 鼠标相对移动
 static BOOL MouseMoveAbsolute(IN LONG dx, IN LONG dy); // 鼠标绝对移动
-// Draw
-static BOOL DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize = 16);  // 初始化绘制
-static BOOL DrawDestroy(); // 结束绘制
-static BOOL DrawFps(); // 绘制FPS
-static BOOL DrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN COLORREF color, IN INT fontSize = 16); // 绘制文本
-static BOOL DrawLine(IN LONG x1, IN LONG y1, IN  LONG x2, IN  LONG y2, IN LONG lineWidth, IN  COLORREF color); // 绘制线条
-static BOOL DrawRect(IN LONG x, IN LONG y, IN LONG width, IN  LONG height, IN  LONG lineWidth, IN COLORREF color); // 绘制矩形
-static BOOL DrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN COLORREF color); // 填充矩形
-static BOOL DrawCircle(IN LONG x, IN LONG y, IN LONG r, IN COLORREF color, IN LONG lineCount, IN LONG lineWidth); // 绘制圆圈
+// GDI Draw
+static BOOL GDIDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize = 16); // 初始化绘制
+static BOOL GDIDrawDestroy(); // 结束绘制
+static BOOL GDIDrawFps(); // 绘制FPS
+static BOOL GDIDrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN COLORREF color, IN INT fontSize = 16); // 绘制文本
+static BOOL GDIDrawLine(IN LONG x1, IN LONG y1, IN  LONG x2, IN  LONG y2, IN LONG lineWidth, IN  COLORREF color); // 绘制线条
+static BOOL GDIDrawRect(IN LONG x, IN LONG y, IN LONG width, IN  LONG height, IN  LONG lineWidth, IN COLORREF color); // 绘制矩形
+static BOOL GDIDrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN COLORREF color); // 填充矩形
+static BOOL GDIDrawCircle(IN LONG x, IN LONG y, IN LONG r, IN COLORREF color, IN LONG lineCount, IN LONG lineWidth); // 绘制圆圈
 // Utils
 static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath 为宽字符路径  例如 L"C:\\123.exe"
 static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址
@@ -68,7 +68,8 @@ ToDo:
 - [x] WindowHide 窗口隐藏
 - [x] GetProcessId 获取进程 ID
 - [x] InjectDll DLL 注入
-- [x] 绘制 API
+- [x] GDI 绘制 API
+- [ ] D3D 绘制 API
 - [x] 打包为 Lib 和 Dll
 - [ ] 转易语言模块
 - [ ] 驱动隐藏

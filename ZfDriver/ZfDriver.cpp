@@ -297,7 +297,7 @@ BOOL ZfDriver::MouseMoveAbsolute(IN LONG dx, IN LONG dy)
 	return TRUE;
 }
 
-BOOL ZfDriver::DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
+BOOL ZfDriver::GDIDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
 {
 	if (gIsZfDriverInstalled == FALSE)
 		return FALSE;
@@ -306,7 +306,7 @@ BOOL ZfDriver::DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
 		delete gPGDIObject;
 		gPGDIObject = NULL;
 	}
-	SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
+	//SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_UNAWARE);
 	INT width = GetSystemMetrics(SM_CXSCREEN);
 	INT height = GetSystemMetrics(SM_CYSCREEN);
 	gPGDIObject = new GDI(width, height, drawLoop, fontSize);
@@ -318,7 +318,7 @@ BOOL ZfDriver::DrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
 	return gPGDIObject->IsInited();
 }
 
-BOOL ZfDriver::DrawDestroy()
+BOOL ZfDriver::GDIDrawDestroy()
 {
 	if (gIsZfDriverInstalled == FALSE)
 		return FALSE;
@@ -334,7 +334,7 @@ BOOL ZfDriver::DrawDestroy()
 	return TRUE;
 }
 
-BOOL ZfDriver::DrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN COLORREF color, IN INT fontSize)
+BOOL ZfDriver::GDIDrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN COLORREF color, IN INT fontSize)
 {
 	if (gPGDIObject == NULL)
 		return FALSE;
@@ -342,7 +342,7 @@ BOOL ZfDriver::DrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN COLORREF color,
 	return TRUE;
 }
 
-BOOL ZfDriver::DrawFps()
+BOOL ZfDriver::GDIDrawFps()
 {
 	if (gPGDIObject == NULL)
 		return FALSE;
@@ -350,7 +350,7 @@ BOOL ZfDriver::DrawFps()
 	return TRUE;
 }
 
-BOOL ZfDriver::DrawLine(IN LONG x1, IN LONG y1, IN LONG x2, IN LONG y2, IN LONG lineWidth, IN COLORREF color)
+BOOL ZfDriver::GDIDrawLine(IN LONG x1, IN LONG y1, IN LONG x2, IN LONG y2, IN LONG lineWidth, IN COLORREF color)
 {
 	if (gPGDIObject == NULL)
 		return FALSE;
@@ -358,7 +358,7 @@ BOOL ZfDriver::DrawLine(IN LONG x1, IN LONG y1, IN LONG x2, IN LONG y2, IN LONG 
 	return TRUE;
 }
 
-BOOL ZfDriver::DrawRect(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN LONG lineWidth, IN COLORREF color)
+BOOL ZfDriver::GDIDrawRect(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN LONG lineWidth, IN COLORREF color)
 {
 	if (gPGDIObject == NULL)
 		return FALSE;
@@ -366,7 +366,7 @@ BOOL ZfDriver::DrawRect(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN 
 	return TRUE;
 }
 
-BOOL ZfDriver::DrawCircle(IN LONG x, IN LONG y, IN LONG r, IN COLORREF color, IN LONG lineCount, IN LONG lineWidth)
+BOOL ZfDriver::GDIDrawCircle(IN LONG x, IN LONG y, IN LONG r, IN COLORREF color, IN LONG lineCount, IN LONG lineWidth)
 {
 	if (gPGDIObject == NULL)
 		return FALSE;
@@ -374,7 +374,7 @@ BOOL ZfDriver::DrawCircle(IN LONG x, IN LONG y, IN LONG r, IN COLORREF color, IN
 	return TRUE;
 }
 
-BOOL ZfDriver::DrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN COLORREF color)
+BOOL ZfDriver::GDIDrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN COLORREF color)
 {
 	if (gPGDIObject == NULL)
 		return FALSE;
