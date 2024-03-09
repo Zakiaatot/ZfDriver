@@ -18,21 +18,6 @@ INT D3D::fontSize_ = 16;
 HANDLE D3D::drawThreadHandle_ = 0;
 D3DFPS D3D::fps_ = { 0 };
 D3D* g = 0;
-LONG gW = 0;
-INT gH = 0;
-
-static INT GetScreenResolution() {
-	// 获取主显示器的句柄
-	HMONITOR hMonitor = MonitorFromWindow(NULL, MONITOR_DEFAULTTOPRIMARY);
-
-	// 获取显示器信息
-	MONITORINFOEX monitorInfo;
-	monitorInfo.cbSize = sizeof(MONITORINFOEX);
-	GetMonitorInfo(hMonitor, &monitorInfo);
-
-	// 获取分辨率
-	return monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
-}
 
 
 VOID D3D::Reset()
@@ -62,10 +47,6 @@ VOID D3D::Reset()
 		{
 			pD3d_->Release();
 			pD3d_ = NULL;
-		}
-		if (drawThreadHandle_)
-		{
-			CloseHandle(drawThreadHandle_);
 		}
 		fps_ = { 0 };
 		pD3d_ = Direct3DCreate9(D3D_SDK_VERSION);
@@ -156,8 +137,6 @@ D3D::D3D(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
 
 	drawThreadHandle_ = CreateThread(0, 0, D3D::FuncLoop, this, 0, 0);
 	inited_ = TRUE;
-	gW = GetSystemMetrics(SM_CXSCREEN);
-	gH = GetScreenResolution();
 }
 
 D3D::~D3D()
@@ -293,23 +272,18 @@ DWORD D3D::FuncLoop(LPVOID pD3DObject)
 			::DispatchMessage(&msg);
 		}
 
-		if (gW != GetSystemMetrics(SM_CXSCREEN) || gH != GetScreenResolution())
-		{
-			gW = GetSystemMetrics(SM_CXSCREEN);
-			gH = GetScreenResolution();
-			Reset();
-			break;
-		}
-
 		obj->pD3dDevice_->Clear(0, 0, D3DCLEAR_TARGET, 0, 1.0f, 0);
 		obj->pD3dDevice_->BeginScene();
 
 		obj->subFunc_();
 
 		obj->pD3dDevice_->EndScene();
-		obj->pD3dDevice_->Present(0, 0, 0, 0);
+		if (D3D_OK != obj->pD3dDevice_->Present(0, 0, 0, 0))
+		{
+			Reset();
+			break;
+		}
 	}
-	timeEndPeriod(1);
 	return 0;
 }
 
