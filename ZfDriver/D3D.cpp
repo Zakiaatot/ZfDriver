@@ -8,39 +8,89 @@
 
 #define PI acos(-1)
 
-static LRESULT CALLBACK WindowProc
-(
-	IN HWND hwnd,
-	IN UINT uMsg,
-	IN WPARAM wParam,
-	IN LPARAM lParam
-)
+HWND D3D::hwnd_ = 0;
+LPDIRECT3D9 D3D::pD3d_ = 0;
+LPDIRECT3DDEVICE9 D3D::pD3dDevice_ = 0;
+D3DPRESENT_PARAMETERS    D3D::d3dpp_ = { 0 };
+ID3DXLine* D3D::pLine_ = NULL;
+ID3DXFont* D3D::pFont_ = NULL;
+INT D3D::fontSize_ = 16;
+HANDLE D3D::drawThreadHandle_ = 0;
+D3DFPS D3D::fps_ = { 0 };
+D3D* g = NULL;
+LONG gW = 0;
+
+VOID D3D::Reset()
 {
-	if (uMsg == 2)
+	if (pD3d_)
 	{
+		if (pFont_ != NULL)
+		{
+			pFont_->Release();
+			pFont_ = NULL;
+		}
+
+		if (pLine_ != NULL)
+		{
+			pLine_->Release();
+			pLine_ = NULL;
+		}
+
+		if (pD3dDevice_ != NULL)
+		{
+			pD3dDevice_->Clear(0, 0, D3DCLEAR_TARGET, 0, 1.0f, 0);
+			pD3dDevice_->Release();
+			pD3dDevice_ = NULL;
+		}
+
+		if (pD3d_ != NULL)
+		{
+			pD3d_->Release();
+			pD3d_ = NULL;
+		}
+		if (drawThreadHandle_)
+		{
+			CloseHandle(drawThreadHandle_);
+		}
+		fps_ = { 0 };
+		pD3d_ = Direct3DCreate9(D3D_SDK_VERSION);
+		d3dpp_.Windowed = TRUE;
+		d3dpp_.SwapEffect = D3DSWAPEFFECT_DISCARD;
+		d3dpp_.BackBufferFormat = D3DFMT_UNKNOWN;
+		d3dpp_.EnableAutoDepthStencil = TRUE;
+		d3dpp_.AutoDepthStencilFormat = D3DFMT_D16;
+		d3dpp_.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+		pD3d_->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd_, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp_, &pD3dDevice_);
+		D3DXCreateLine(pD3dDevice_, &pLine_);
+		D3DXCreateFontW(pD3dDevice_, fontSize_, 0, FW_DONTCARE, D3DX_DEFAULT, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, L"Vernada", &pFont_);
+		drawThreadHandle_ = CreateThread(0, 0, D3D::FuncLoop, g, 0, 0);
+	}
+}
+
+LRESULT CALLBACK D3D::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_DISPLAYCHANGE | WM_DPICHANGED:
+		Reset();
+		break;
+	case WM_CLOSE:
 		PostQuitMessage(0);
 		return 0;
 	}
-	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+	return DefWindowProcW(hWnd, message, wParam, lParam);
 }
 
 
 D3D::D3D(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
-	:hwnd_(NULL),
-	drawThreadHandle_(NULL),
+	:
 	subFunc_(subFunc),
 	width_(width),
 	height_(height),
-	fontSize_(fontSize),
 	inited_(FALSE),
-	fps_({ 0 }),
-	pD3d_(NULL),
-	pD3dDevice_(NULL),
-	d3dpp_({ 0 }),
-	pLine_(NULL),
-	pFont_(NULL),
 	window_({ 0 })
 {
+	g = this;
 	window_ = { 0 };
 	window_.cbClsExtra = NULL;
 	window_.cbSize = sizeof(WNDCLASSEX);
@@ -50,7 +100,7 @@ D3D::D3D(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
 	window_.hIcon = LoadIcon(0, IDI_APPLICATION);
 	window_.hIconSm = LoadIcon(0, IDI_APPLICATION);
 	window_.hInstance = GetModuleHandle(NULL);
-	window_.lpfnWndProc = (WNDPROC)WindowProc;
+	window_.lpfnWndProc = WindowProc;
 	window_.lpszClassName = L"Microsoft Edge";
 	window_.lpszMenuName = L"ZfDriver D3D";
 	window_.style = CS_VREDRAW | CS_HREDRAW;
@@ -68,7 +118,7 @@ D3D::D3D(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
 		1,
 		width_,
 		height_,
-		0,
+		HWND_DESKTOP,
 		0,
 		0,
 		0
@@ -91,13 +141,13 @@ D3D::D3D(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
 
 	drawThreadHandle_ = CreateThread(0, 0, D3D::FuncLoop, this, 0, 0);
 	inited_ = TRUE;
+	gW = GetSystemMetrics(SM_CXSCREEN);
 }
 
 D3D::~D3D()
 {
 	if (drawThreadHandle_)
 	{
-		TerminateThread(drawThreadHandle_, EXIT_SUCCESS);
 		CloseHandle(drawThreadHandle_);
 	}
 	if (pFont_ != NULL)
@@ -114,6 +164,7 @@ D3D::~D3D()
 
 	if (pD3dDevice_ != NULL)
 	{
+		pD3dDevice_->Clear(0, 0, D3DCLEAR_TARGET, 0, 1.0f, 0);
 		pD3dDevice_->Release();
 		pD3dDevice_ = NULL;
 	}
@@ -219,15 +270,19 @@ DWORD D3D::FuncLoop(LPVOID pD3DObject)
 	timeBeginPeriod(1);
 	while (obj->subFunc_)
 	{
-		MSG Message;
-		ZeroMemory(&Message, sizeof(Message));
-		if (PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
+		MSG msg;
+		while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
 		{
-			DispatchMessage(&Message);
-			TranslateMessage(&Message);
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
 		}
 
-		Sleep(1);
+		if (gW != GetSystemMetrics(SM_CXSCREEN))
+		{
+			gW = GetSystemMetrics(SM_CXSCREEN);
+			Reset();
+			break;
+		}
 
 		obj->pD3dDevice_->Clear(0, 0, D3DCLEAR_TARGET, 0, 1.0f, 0);
 		obj->pD3dDevice_->BeginScene();
@@ -238,6 +293,7 @@ DWORD D3D::FuncLoop(LPVOID pD3DObject)
 		obj->pD3dDevice_->Present(0, 0, 0, 0);
 	}
 	timeEndPeriod(1);
+	obj->pD3dDevice_->Clear(0, 0, D3DCLEAR_TARGET, 0, 1.0f, 0);
 	return 0;
 }
 

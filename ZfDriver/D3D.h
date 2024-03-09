@@ -40,21 +40,23 @@ private:
 private:
 	static DWORD FuncLoop(LPVOID pD3DObject);
 	VOID ReCreateFont(INT fontSize);
+	static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	static VOID Reset();
 private:
-	HWND hwnd_;
-	HANDLE drawThreadHandle_;
 	SUB_FUNC subFunc_;
-	INT fontSize_;
 	LONG width_;
 	LONG height_;
 	BOOL inited_;
-	D3DFPS fps_;
-	LPDIRECT3D9 pD3d_;
-	LPDIRECT3DDEVICE9 pD3dDevice_;
-	D3DPRESENT_PARAMETERS    d3dpp_;
-	ID3DXLine* pLine_;
-	ID3DXFont* pFont_;
 	WNDCLASSEX window_;
+	static HWND hwnd_;
+	static D3DFPS fps_;
+	static LPDIRECT3D9 pD3d_;
+	static LPDIRECT3DDEVICE9 pD3dDevice_;
+	static D3DPRESENT_PARAMETERS    d3dpp_;
+	static ID3DXLine* pLine_;
+	static ID3DXFont* pFont_;
+	static INT fontSize_;
+	static HANDLE drawThreadHandle_;
 };
 
 #endif // !_D3D_H_
