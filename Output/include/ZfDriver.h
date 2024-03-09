@@ -13,6 +13,12 @@
 
 typedef VOID(*DRAW_LOOP)();
 
+typedef DWORD D3DCOLOR;
+#define D3DCOLOR_ARGB(a,r,g,b) \
+    ((D3DCOLOR)((((a)&0xff)<<24)|(((r)&0xff)<<16)|(((g)&0xff)<<8)|((b)&0xff)))
+#define D3DCOLOR_RGBA(r,g,b,a) D3DCOLOR_ARGB(a,r,g,b)
+#define D3DCOLOR_RGB(r,g,b) D3DCOLOR_ARGB(255,r,g,b)
+
 class DLL ZfDriver
 {
 private:
@@ -58,6 +64,15 @@ public:
 	static BOOL GDIDrawRect(IN LONG x, IN LONG y, IN LONG width, IN  LONG height, IN  LONG lineWidth, IN COLORREF color); // 绘制矩形
 	static BOOL GDIDrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN COLORREF color); // 填充矩形
 	static BOOL GDIDrawCircle(IN LONG x, IN LONG y, IN LONG r, IN COLORREF color, IN LONG lineCount, IN LONG lineWidth); // 绘制圆圈
+	// D3D Draw
+	static BOOL D3DDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize = 16); // 初始化绘制
+	static BOOL D3DDrawDestroy(); // 结束绘制
+	static BOOL D3DDrawFps(IN INT fontSzie); // 绘制FPS
+	static BOOL D3DDrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN D3DCOLOR color, IN INT fontSize = 16); // 绘制文本
+	static BOOL D3DDrawLine(IN FLOAT x1, IN FLOAT y1, IN  FLOAT x2, IN  FLOAT y2, IN FLOAT lineWidth, IN  D3DCOLOR color); // 绘制线条
+	static BOOL D3DDrawRect(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN  FLOAT height, IN  FLOAT lineWidth, IN D3DCOLOR color); // 绘制矩形
+	static BOOL D3DDrawRectFill(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN FLOAT height, IN D3DCOLOR color); // 填充矩形
+	static BOOL D3DDrawCircle(IN FLOAT x, IN FLOAT y, IN FLOAT r, IN D3DCOLOR color, IN LONG lineCount, IN FLOAT lineWidth); // 绘制圆圈
 	// Utils
 	static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath 为宽字符路径  例如 L"C:\\123.exe"
 	static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址

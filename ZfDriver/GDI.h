@@ -10,7 +10,7 @@ typedef struct {
 	FLOAT curTime;
 	FLOAT lastTime;
 	FLOAT retFps;
-} D3DFPS;
+} GDIFPS;
 
 class GDI
 {
@@ -47,7 +47,7 @@ private:
 	HDC device_;
 	HGDIOBJ object_;
 	BOOL inited_;
-	D3DFPS fps_;
+	GDIFPS fps_;
 };
 #endif // !_GDI_H_
 

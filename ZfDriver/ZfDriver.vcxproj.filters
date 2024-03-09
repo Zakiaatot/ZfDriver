@@ -26,15 +26,15 @@
     <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="D3D.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ZfDriver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Utils.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="DriverController.cpp">
@@ -44,6 +44,9 @@
       <Filter>头文件</Filter>
     </ClCompile>
     <ClCompile Include="GDI.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

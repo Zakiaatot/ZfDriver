@@ -6,6 +6,7 @@
 #include "DriverController.h"
 #include "IoctlUtils.h"
 #include "GDI.h"
+#include "D3D.h"
 
 #define DRIVER_FILE_NAME L"ZfDriver-R0.sys"
 #define DRIVER_SERVICE_NAME L"ZfDriver"
@@ -14,6 +15,7 @@
 DriverController gDriverController;
 BOOL gIsZfDriverInstalled = FALSE;
 GDI* gPGDIObject = NULL;
+D3D* gPD3DObject = NULL;
 
 BOOL ZfDriver::Install()
 {
@@ -299,8 +301,6 @@ BOOL ZfDriver::MouseMoveAbsolute(IN LONG dx, IN LONG dy)
 
 BOOL ZfDriver::GDIDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
 {
-	if (gIsZfDriverInstalled == FALSE)
-		return FALSE;
 	if (gPGDIObject)
 	{
 		delete gPGDIObject;
@@ -320,8 +320,6 @@ BOOL ZfDriver::GDIDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
 
 BOOL ZfDriver::GDIDrawDestroy()
 {
-	if (gIsZfDriverInstalled == FALSE)
-		return FALSE;
 	if (gPGDIObject)
 	{
 		delete gPGDIObject;
@@ -381,6 +379,87 @@ BOOL ZfDriver::GDIDrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG heig
 	gPGDIObject->FillRect(x, y, width, height, color);
 	return TRUE;
 }
+
+BOOL ZfDriver::D3DDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
+{
+	if (gPD3DObject)
+	{
+		delete gPD3DObject;
+		gPD3DObject = NULL;
+	}
+	INT width = GetSystemMetrics(SM_CXSCREEN);
+	INT height = GetSystemMetrics(SM_CYSCREEN);
+	gPD3DObject = new D3D(width, height, drawLoop, fontSize);
+	HWND hwnd = gPD3DObject->GetHwnd();
+	if (hwnd)
+	{
+		ZfDriver::WindowHide(hwnd);
+	}
+	return gPD3DObject->IsInited();
+}
+
+BOOL ZfDriver::D3DDrawDestroy()
+{
+	if (gPD3DObject)
+	{
+		delete gPD3DObject;
+		gPD3DObject = NULL;
+	}
+	else
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
+BOOL ZfDriver::D3DDrawFps(IN INT fontSzie)
+{
+	if (gPD3DObject == NULL)
+		return FALSE;
+	gPD3DObject->DrawFps(fontSzie);
+	return TRUE;
+}
+
+BOOL ZfDriver::D3DDrawText(IN LONG x, IN LONG y, IN LPCWSTR str, IN D3DCOLOR color, IN INT fontSize)
+{
+	if (gPD3DObject == NULL)
+		return FALSE;
+	gPD3DObject->DrawText(x, y, str, color, fontSize);
+	return TRUE;
+}
+
+BOOL ZfDriver::D3DDrawLine(IN FLOAT x1, IN FLOAT y1, IN FLOAT x2, IN FLOAT y2, IN FLOAT lineWidth, IN D3DCOLOR color)
+{
+	if (gPD3DObject == NULL)
+		return FALSE;
+	gPD3DObject->DrawLine(x1, y1, x2, y2, lineWidth, color);
+	return TRUE;
+}
+
+BOOL ZfDriver::D3DDrawRect(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN FLOAT height, IN FLOAT lineWidth, IN D3DCOLOR color)
+{
+	if (gPD3DObject == NULL)
+		return FALSE;
+	gPD3DObject->DrawRect(x, y, width, height, lineWidth, color);
+	return TRUE;
+}
+
+BOOL ZfDriver::D3DDrawRectFill(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN FLOAT height, IN D3DCOLOR color)
+{
+	if (gPD3DObject == NULL)
+		return FALSE;
+	gPD3DObject->FillRect(x, y, width, height, color);
+	return TRUE;
+}
+
+BOOL ZfDriver::D3DDrawCircle(IN FLOAT x, IN FLOAT y, IN FLOAT r, IN D3DCOLOR color, IN LONG lineCount, IN FLOAT lineWidth)
+{
+	if (gPD3DObject == NULL)
+		return FALSE;
+	gPD3DObject->DrawCircle(x, y, r, color, lineCount, lineWidth);
+	return TRUE;
+}
+
 
 BOOL ZfDriver::ProcessHide(IN DWORD pid, IN BOOL hide)
 {

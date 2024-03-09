@@ -5,6 +5,8 @@ VisualStudioVersion = 17.7.34024.191
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZfDriver", "ZfDriver.vcxproj", "{3F6A0748-79B9-447D-B429-0F55C6A6185C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ZfDriver-Test", "..\ZfDriver-Test\ZfDriver-Test.vcxproj", "{F60FE76B-9DEC-4EBE-A287-C112163415C3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{3F6A0748-79B9-447D-B429-0F55C6A6185C}.Release|x64.Build.0 = Release|x64
 		{3F6A0748-79B9-447D-B429-0F55C6A6185C}.Release|x86.ActiveCfg = Release|Win32
 		{3F6A0748-79B9-447D-B429-0F55C6A6185C}.Release|x86.Build.0 = Release|Win32
+		{F60FE76B-9DEC-4EBE-A287-C112163415C3}.Debug|x64.ActiveCfg = Debug|x64
+		{F60FE76B-9DEC-4EBE-A287-C112163415C3}.Debug|x64.Build.0 = Debug|x64
+		{F60FE76B-9DEC-4EBE-A287-C112163415C3}.Debug|x86.ActiveCfg = Debug|Win32
+		{F60FE76B-9DEC-4EBE-A287-C112163415C3}.Debug|x86.Build.0 = Debug|Win32
+		{F60FE76B-9DEC-4EBE-A287-C112163415C3}.Release|x64.ActiveCfg = Release|x64
+		{F60FE76B-9DEC-4EBE-A287-C112163415C3}.Release|x64.Build.0 = Release|x64
+		{F60FE76B-9DEC-4EBE-A287-C112163415C3}.Release|x86.ActiveCfg = Release|Win32
+		{F60FE76B-9DEC-4EBE-A287-C112163415C3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
