@@ -59,7 +59,6 @@ VOID D3D::Reset()
 		pD3d_->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd_, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp_, &pD3dDevice_);
 		D3DXCreateLine(pD3dDevice_, &pLine_);
 		D3DXCreateFontW(pD3dDevice_, fontSize_, 0, FW_DONTCARE, D3DX_DEFAULT, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, L"Vernada", &pFont_);
-		drawThreadHandle_ = CreateThread(0, 0, D3D::FuncLoop, g, 0, 0);
 	}
 }
 
@@ -281,7 +280,6 @@ DWORD D3D::FuncLoop(LPVOID pD3DObject)
 		if (D3D_OK != obj->pD3dDevice_->Present(0, 0, 0, 0))
 		{
 			Reset();
-			break;
 		}
 	}
 	return 0;
