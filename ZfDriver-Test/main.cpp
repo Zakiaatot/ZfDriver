@@ -4,7 +4,7 @@
 #pragma comment(lib,"ZfDriver.lib")
 
 
-VOID DrawLoop()
+static VOID D3DDrawLoop()
 {
 	ZfDriver::D3DDrawFps(24);
 	ZfDriver::D3DDrawRect(100, 100, 100, 100, 2, D3DCOLOR_RGB(255, 0, 0));
@@ -12,6 +12,16 @@ VOID DrawLoop()
 	ZfDriver::D3DDrawText(0, 0, L"∑…∏ÁªÊ÷∆", D3DCOLOR_RGB(255, 255, 0), 24);
 	ZfDriver::D3DDrawCircle(300, 100, 50, D3DCOLOR_RGB(0, 255, 0), 8, 2);
 	ZfDriver::D3DDrawLine(300, 100, 500, 500, 1, D3DCOLOR_RGB(0, 255, 255));
+}
+
+static VOID IMGDrawLoop()
+{
+	ZfDriver::IMGDrawFps();
+	ZfDriver::IMGDrawRect(100, 100, 100, 100, 2, IMGCOLOR(255, 0, 0));
+	ZfDriver::IMGDrawRectFill(500, 500, 200, 200, IMGCOLOR(0, 0, 255));
+	ZfDriver::IMGDrawText(0, 0, L"∑…∏ÁªÊ÷∆", IMGCOLOR(255, 255, 0));
+	ZfDriver::IMGDrawCircle(300, 100, 50, IMGCOLOR(0, 255, 0), 8, 2);
+	ZfDriver::IMGDrawLine(300, 100, 500, 500, 1, IMGCOLOR(0, 255, 255));
 }
 
 int main(void)
@@ -82,7 +92,7 @@ int main(void)
 	//}
 
 	// Draw
-	BOOL init = ZfDriver::D3DDrawInit(DrawLoop);
+	BOOL init = ZfDriver::IMGDrawInit(IMGDrawLoop, 32);
 	if (init)
 	{
 		std::cout << "Draw inited." << std::endl;

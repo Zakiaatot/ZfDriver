@@ -7,15 +7,17 @@
 #include "IoctlUtils.h"
 #include "GDI.h"
 #include "D3D.h"
+#include "IMG.h"
 
 #define DRIVER_FILE_NAME L"ZfDriver-R0.sys"
 #define DRIVER_SERVICE_NAME L"ZfDriver"
 #define DRIVER_SYMLINK_NAME L"\\\\.\\ZfDriver"
 
-DriverController gDriverController;
-BOOL gIsZfDriverInstalled = FALSE;
-GDI* gPGDIObject = NULL;
-D3D* gPD3DObject = NULL;
+static DriverController gDriverController;
+static BOOL gIsZfDriverInstalled = FALSE;
+static GDI* gPGDIObject = NULL;
+static D3D* gPD3DObject = NULL;
+static IMG* gPIMGObject = NULL;
 
 BOOL ZfDriver::Install()
 {
@@ -457,6 +459,93 @@ BOOL ZfDriver::D3DDrawCircle(IN FLOAT x, IN FLOAT y, IN FLOAT r, IN D3DCOLOR col
 	if (gPD3DObject == NULL)
 		return FALSE;
 	gPD3DObject->DrawCircle(x, y, r, color, lineCount, lineWidth);
+	return TRUE;
+}
+
+BOOL ZfDriver::IMGDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize)
+{
+	if (gPIMGObject)
+	{
+		delete gPIMGObject;
+		gPIMGObject = NULL;
+	}
+	INT width = GetSystemMetrics(SM_CXSCREEN);
+	INT height = GetSystemMetrics(SM_CYSCREEN);
+	gPIMGObject = new IMG(width, height, drawLoop, fontSize);
+	return gPIMGObject->IsInited();
+}
+
+BOOL ZfDriver::IMGDrawDestroy()
+{
+	if (gPIMGObject)
+	{
+		delete gPIMGObject;
+		gPIMGObject = NULL;
+	}
+	else
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
+BOOL ZfDriver::IMGDrawFps()
+{
+	if (!gPIMGObject)
+	{
+		return FALSE;
+	}
+	gPIMGObject->DrawFps();
+	return TRUE;
+}
+
+BOOL ZfDriver::IMGDrawText(IN FLOAT x, IN FLOAT y, IN LPCWSTR str, IN IMGCOLOR color)
+{
+	if (!gPIMGObject)
+	{
+		return FALSE;
+	}
+	gPIMGObject->DrawText(x, y, str, ImColor(color.x, color.y, color.z, color.w));
+	return TRUE;
+}
+
+BOOL ZfDriver::IMGDrawLine(IN FLOAT x1, IN FLOAT y1, IN FLOAT x2, IN FLOAT y2, IN FLOAT lineWidth, IN IMGCOLOR color)
+{
+	if (!gPIMGObject)
+	{
+		return FALSE;
+	}
+	gPIMGObject->DrawLine(x1, y1, x2, y2, lineWidth, ImColor(color.x, color.y, color.z, color.w));
+	return TRUE;
+}
+
+BOOL ZfDriver::IMGDrawRect(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN FLOAT height, IN FLOAT lineWidth, IN IMGCOLOR color)
+{
+	if (!gPIMGObject)
+	{
+		return FALSE;
+	}
+	gPIMGObject->DrawRect(x, y, width, height, lineWidth, ImColor(color.x, color.y, color.z, color.w));
+	return TRUE;
+}
+
+BOOL ZfDriver::IMGDrawRectFill(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN FLOAT height, IN IMGCOLOR color)
+{
+	if (!gPIMGObject)
+	{
+		return FALSE;
+	}
+	gPIMGObject->FillRect(x, y, width, height, ImColor(color.x, color.y, color.z, color.w));
+	return TRUE;
+}
+
+BOOL ZfDriver::IMGDrawCircle(IN FLOAT x, IN FLOAT y, IN FLOAT r, IN IMGCOLOR color, IN LONG lineCount, IN FLOAT lineWidth)
+{
+	if (!gPIMGObject)
+	{
+		return FALSE;
+	}
+	gPIMGObject->DrawCircle(x, y, r, ImColor(color.x, color.y, color.z, color.w), lineCount, lineWidth);
 	return TRUE;
 }
 

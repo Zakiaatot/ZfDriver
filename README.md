@@ -57,6 +57,15 @@ static BOOL D3DDrawLine(IN FLOAT x1, IN FLOAT y1, IN  FLOAT x2, IN  FLOAT y2, IN
 static BOOL D3DDrawRect(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN  FLOAT height, IN  FLOAT lineWidth, IN D3DCOLOR color); // 绘制矩形
 static BOOL D3DDrawRectFill(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN FLOAT height, IN D3DCOLOR color); // 填充矩形
 static BOOL D3DDrawCircle(IN FLOAT x, IN FLOAT y, IN FLOAT r, IN D3DCOLOR color, IN LONG lineCount, IN FLOAT lineWidth); // 绘制圆圈
+// IMGUI OPENGL3 Draw
+static BOOL IMGDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize = 16); // 初始化绘制
+static BOOL IMGDrawDestroy(); // 结束绘制
+static BOOL IMGDrawFps(); // 绘制FPS
+static BOOL IMGDrawText(IN FLOAT x, IN FLOAT y, IN LPCWSTR str, IN IMGCOLOR color); // 绘制文本
+static BOOL IMGDrawLine(IN FLOAT x1, IN FLOAT y1, IN  FLOAT x2, IN  FLOAT y2, IN FLOAT lineWidth, IN  IMGCOLOR color); // 绘制线条
+static BOOL IMGDrawRect(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN  FLOAT height, IN  FLOAT lineWidth, IN IMGCOLOR color); // 绘制矩形
+static BOOL IMGDrawRectFill(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN FLOAT height, IN IMGCOLOR color); // 填充矩形
+static BOOL IMGDrawCircle(IN FLOAT x, IN FLOAT y, IN FLOAT r, IN IMGCOLOR color, IN LONG lineCount, IN FLOAT lineWidth); // 绘制圆圈
 // Utils
 static BOOL ForceDeleteFile(IN PCWSTR filePath); // 强制删除文件  filePath 为宽字符路径  例如 L"C:\\123.exe"
 static DWORD64 GetModuleBase(IN DWORD pid, IN PCWSTR moduleName); // 取进程模块基址
@@ -79,6 +88,7 @@ ToDo:
 - [x] InjectDll DLL 注入
 - [x] GDI 绘制 API
 - [x] D3D 绘制 API
+- [x] IMGUI OPENGL3 绘制 API
 - [x] 打包为 Lib 和 Dll
 - [ ] 转易语言模块
 - [ ] 驱动隐藏
