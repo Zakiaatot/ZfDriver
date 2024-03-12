@@ -27,7 +27,7 @@ BOOL DriverController::Install(PCWSTR sysPath, PCWSTR serviceName, PCWSTR displa
 		scManager_ = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 		if (scManager_ == NULL)
 		{
-			Utils::AlertError(L"Open SCManager Error!");
+			Utils::AlertError(L"打开注册表失败，请以管理权限运行!");
 			break;
 		}
 
