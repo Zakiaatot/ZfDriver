@@ -2,13 +2,9 @@
 #define _IMG_H_
 
 #include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_opengl3.h"
 #include "ImGui/imgui_impl_win32.h"
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <GL/GL.h>
+#include "ImGui/imgui_impl_dx11.h"
+#include <d3d11.h>
 #include <tchar.h>
 #undef DrawText
 

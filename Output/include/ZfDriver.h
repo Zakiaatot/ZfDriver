@@ -72,7 +72,7 @@ public:
 	static BOOL GDIDrawRect(IN LONG x, IN LONG y, IN LONG width, IN  LONG height, IN  LONG lineWidth, IN COLORREF color); // 绘制矩形
 	static BOOL GDIDrawRectFill(IN LONG x, IN LONG y, IN LONG width, IN LONG height, IN COLORREF color); // 填充矩形
 	static BOOL GDIDrawCircle(IN LONG x, IN LONG y, IN LONG r, IN COLORREF color, IN LONG lineCount, IN LONG lineWidth); // 绘制圆圈
-	// D3D Draw
+	// D3DX9 Draw
 	static BOOL D3DDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize = 16); // 初始化绘制
 	static BOOL D3DDrawDestroy(); // 结束绘制
 	static BOOL D3DDrawFps(IN INT fontSzie); // 绘制FPS
@@ -81,7 +81,7 @@ public:
 	static BOOL D3DDrawRect(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN  FLOAT height, IN  FLOAT lineWidth, IN D3DCOLOR color); // 绘制矩形
 	static BOOL D3DDrawRectFill(IN FLOAT x, IN FLOAT y, IN FLOAT width, IN FLOAT height, IN D3DCOLOR color); // 填充矩形
 	static BOOL D3DDrawCircle(IN FLOAT x, IN FLOAT y, IN FLOAT r, IN D3DCOLOR color, IN LONG lineCount, IN FLOAT lineWidth); // 绘制圆圈
-	// IMGUI OPENGL3 Draw
+	// IMGUI DX11 Draw
 	static BOOL IMGDrawInit(IN DRAW_LOOP drawLoop, IN INT fontSize = 16); // 初始化绘制
 	static BOOL IMGDrawDestroy(); // 结束绘制
 	static BOOL IMGDrawFps(); // 绘制FPS

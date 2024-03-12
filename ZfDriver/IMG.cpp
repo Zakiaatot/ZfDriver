@@ -4,112 +4,24 @@
 #include "IMG.h"
 #include "ZfDriver.h"
 
-#pragma comment(lib,"opengl32.lib")
-
-
-// Data stored per platform window
-struct WGL_WindowData { HDC hDC; };
+#pragma comment(lib,"d3d11.lib")
 
 // Data
-static HGLRC            g_hRC;
-static WGL_WindowData   g_MainWindow;
-static int              g_Width;
-static int              g_Height;
-static ImVec4 clear_color = ImColor(0, 0, 0);
+static ID3D11Device* g_pd3dDevice = nullptr;
+static ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
+static IDXGISwapChain* g_pSwapChain = nullptr;
+static UINT                     g_ResizeWidth = 0, g_ResizeHeight = 0;
+static ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
 static ImGuiIO* gIo = 0;
+static ImVec4 clear_color = ImColor(0, 0, 0);
 
-// Helper
-
-static std::string StringToUTF8(const std::string& gbkData)
-{
-	const char* GBK_LOCALE_NAME = "CHS";  //GBK在windows下的locale name(.936, CHS ), linux下的locale名可能是"zh_CN.GBK"
-
-	std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>>
-		conv(new std::codecvt<wchar_t, char, mbstate_t>(GBK_LOCALE_NAME));
-	std::wstring wString = conv.from_bytes(gbkData);    // string => wstring
-
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
-	std::string utf8str = convert.to_bytes(wString);     // wstring => utf-8
-
-	return utf8str;
-}
-
-static bool CreateDeviceWGL(HWND hWnd, WGL_WindowData* data)
-{
-	HDC hDc = ::GetDC(hWnd);
-	PIXELFORMATDESCRIPTOR pfd = { 0 };
-	pfd.nSize = sizeof(pfd);
-	pfd.nVersion = 1;
-	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.cColorBits = 32;
-
-	const int pf = ::ChoosePixelFormat(hDc, &pfd);
-	if (pf == 0)
-		return false;
-	if (::SetPixelFormat(hDc, pf, &pfd) == FALSE)
-		return false;
-	::ReleaseDC(hWnd, hDc);
-
-	data->hDC = ::GetDC(hWnd);
-	if (!g_hRC)
-		g_hRC = wglCreateContext(data->hDC);
-	return true;
-}
-
-static void CleanupDeviceWGL(HWND hWnd, WGL_WindowData* data)
-{
-	wglMakeCurrent(nullptr, nullptr);
-	::ReleaseDC(hWnd, data->hDC);
-}
-
-// Support function for multi-viewports
-// Unlike most other backend combination, we need specific hooks to combine Win32+OpenGL.
-// We could in theory decide to support Win32-specific code in OpenGL backend via e.g. an hypothetical ImGui_ImplOpenGL3_InitForRawWin32().
-static void Hook_Renderer_CreateWindow(ImGuiViewport* viewport)
-{
-	assert(viewport->RendererUserData == NULL);
-
-	WGL_WindowData* data = IM_NEW(WGL_WindowData);
-	CreateDeviceWGL((HWND)viewport->PlatformHandle, data);
-	viewport->RendererUserData = data;
-}
-
-static void Hook_Renderer_DestroyWindow(ImGuiViewport* viewport)
-{
-	if (viewport->RendererUserData != NULL)
-	{
-		WGL_WindowData* data = (WGL_WindowData*)viewport->RendererUserData;
-		CleanupDeviceWGL((HWND)viewport->PlatformHandle, data);
-		IM_DELETE(data);
-		viewport->RendererUserData = NULL;
-	}
-}
-
-static void Hook_Platform_RenderWindow(ImGuiViewport* viewport, void*)
-{
-	// Activate the platform window DC in the OpenGL rendering context
-	if (WGL_WindowData* data = (WGL_WindowData*)viewport->RendererUserData)
-		wglMakeCurrent(data->hDC, g_hRC);
-}
-
-static void Hook_Renderer_SwapBuffers(ImGuiViewport* viewport, void*)
-{
-	if (WGL_WindowData* data = (WGL_WindowData*)viewport->RendererUserData)
-		::SwapBuffers(data->hDC);
-}
-
-static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message)
-	{
-	case WM_CLOSE:
-		PostQuitMessage(0);
-		return 0;
-	}
-	return DefWindowProcW(hWnd, message, wParam, lParam);
-}
-
+// Forward declarations of helper functions
+static bool CreateDeviceD3D(HWND hWnd);
+static void CleanupDeviceD3D();
+static void CreateRenderTarget();
+static void CleanupRenderTarget();
+static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static std::string StringToUTF8(const std::string& gbkData);
 
 IMG::IMG(LONG width, LONG height, SUB_FUNC subFunc, INT fontSize)
 	:
@@ -131,12 +43,12 @@ IMG::~IMG()
 {
 	CloseHandle(drawThreadHandle_);
 	subFunc_ = 0;
-	ImGui_ImplOpenGL3_Shutdown();
+	// Cleanup
+	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	CleanupDeviceWGL(hwnd_, &g_MainWindow);
-	wglDeleteContext(g_hRC);
+	CleanupDeviceD3D();
 	::DestroyWindow(hwnd_);
 	::UnregisterClassW(window_.lpszClassName, window_.hInstance);
 }
@@ -192,7 +104,7 @@ DWORD IMG::FuncLoop(LPVOID pIMGObject)
 	p->window_.hIcon = LoadIcon(0, IDI_APPLICATION);
 	p->window_.hIconSm = LoadIcon(0, IDI_APPLICATION);
 	p->window_.hInstance = GetModuleHandle(NULL);
-	p->window_.lpfnWndProc = WindowProc;
+	p->window_.lpfnWndProc = WndProc;
 	p->window_.lpszClassName = L"Microsoft Edge";
 	p->window_.lpszMenuName = L"ZfDriver IMG";
 	p->window_.style = CS_VREDRAW | CS_HREDRAW;
@@ -215,17 +127,15 @@ DWORD IMG::FuncLoop(LPVOID pIMGObject)
 		0,
 		0
 	);
-	assert(hwnd_ != 0);
+	assert(p->hwnd_ != 0);
 
-	// Initialize OpenGL
-	if (!CreateDeviceWGL(p->hwnd_, &g_MainWindow))
+	// Initialize Direct3D
+	if (!CreateDeviceD3D(p->hwnd_))
 	{
-		CleanupDeviceWGL(p->hwnd_, &g_MainWindow);
-		::DestroyWindow(p->hwnd_);
+		CleanupDeviceD3D();
 		::UnregisterClassW(p->window_.lpszClassName, p->window_.hInstance);
 		return -1;
 	}
-	wglMakeCurrent(g_MainWindow.hDC, g_hRC);
 
 	// Show the window
 	::ShowWindow(p->hwnd_, SW_SHOWDEFAULT);
@@ -254,22 +164,8 @@ DWORD IMG::FuncLoop(LPVOID pIMGObject)
 	}
 
 	// Setup Platform/Renderer backends
-	ImGui_ImplWin32_InitForOpenGL(p->hwnd_);
-	ImGui_ImplOpenGL3_Init();
-
-	// Win32+GL needs specific hooks for viewport, as there are specific things needed to tie Win32 and GL api.
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-	{
-		ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
-		IM_ASSERT(platform_io.Renderer_CreateWindow == NULL);
-		IM_ASSERT(platform_io.Renderer_DestroyWindow == NULL);
-		IM_ASSERT(platform_io.Renderer_SwapBuffers == NULL);
-		IM_ASSERT(platform_io.Platform_RenderWindow == NULL);
-		platform_io.Renderer_CreateWindow = Hook_Renderer_CreateWindow;
-		platform_io.Renderer_DestroyWindow = Hook_Renderer_DestroyWindow;
-		platform_io.Renderer_SwapBuffers = Hook_Renderer_SwapBuffers;
-		platform_io.Platform_RenderWindow = Hook_Platform_RenderWindow;
-	}
+	ImGui_ImplWin32_Init(p->hwnd_);
+	ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
 	// Load Fonts
 	ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", p->fontSize_, nullptr, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
@@ -290,8 +186,17 @@ DWORD IMG::FuncLoop(LPVOID pIMGObject)
 			::DispatchMessage(&msg);
 		}
 
+		// Handle window resize (we don't resize directly in the WM_SIZE handler)
+		if (g_ResizeWidth != 0 && g_ResizeHeight != 0)
+		{
+			CleanupRenderTarget();
+			g_pSwapChain->ResizeBuffers(0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+			g_ResizeWidth = g_ResizeHeight = 0;
+			CreateRenderTarget();
+		}
+
 		// Start the Dear ImGui frame
-		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
@@ -302,23 +207,135 @@ DWORD IMG::FuncLoop(LPVOID pIMGObject)
 
 		// Rendering
 		ImGui::Render();
-		glViewport(0, 0, g_Width, g_Height);
-		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-		glClear(GL_COLOR_BUFFER_BIT);
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
+		g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
+		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 		// Update and Render additional Platform Windows
-		if (gIo->ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
-
-			// Restore the OpenGL rendering context to the main window DC, since platform windows might have changed it.
-			wglMakeCurrent(g_MainWindow.hDC, g_hRC);
 		}
 
-		// Present
-		::SwapBuffers(g_MainWindow.hDC);
+		//g_pSwapChain->Present(1, 0); // Present with vsync
+		g_pSwapChain->Present(0, 0); // Present without vsync
 	}
 	return 0;
+}
+
+
+// Helper functions
+bool CreateDeviceD3D(HWND hWnd)
+{
+	// Setup swap chain
+	DXGI_SWAP_CHAIN_DESC sd;
+	ZeroMemory(&sd, sizeof(sd));
+	sd.BufferCount = 2;
+	sd.BufferDesc.Width = 0;
+	sd.BufferDesc.Height = 0;
+	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	sd.BufferDesc.RefreshRate.Numerator = 60;
+	sd.BufferDesc.RefreshRate.Denominator = 1;
+	sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	sd.OutputWindow = hWnd;
+	sd.SampleDesc.Count = 1;
+	sd.SampleDesc.Quality = 0;
+	sd.Windowed = TRUE;
+	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+	UINT createDeviceFlags = 0;
+	//createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+	D3D_FEATURE_LEVEL featureLevel;
+	const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
+	HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
+	if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
+		res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
+	if (res != S_OK)
+		return false;
+
+	CreateRenderTarget();
+	return true;
+}
+
+void CleanupDeviceD3D()
+{
+	CleanupRenderTarget();
+	if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = nullptr; }
+	if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = nullptr; }
+	if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = nullptr; }
+}
+
+void CreateRenderTarget()
+{
+	ID3D11Texture2D* pBackBuffer;
+	g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+	g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_mainRenderTargetView);
+	pBackBuffer->Release();
+}
+
+void CleanupRenderTarget()
+{
+	if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = nullptr; }
+}
+
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0 // From Windows SDK 8.1+ headers
+#endif
+
+// Forward declare message handler from imgui_impl_win32.cpp
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+// Win32 message handler
+// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
+// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
+// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
+// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
+LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+		return true;
+
+	switch (msg)
+	{
+	case WM_SIZE:
+		if (wParam == SIZE_MINIMIZED)
+			return 0;
+		g_ResizeWidth = (UINT)LOWORD(lParam); // Queue resize
+		g_ResizeHeight = (UINT)HIWORD(lParam);
+		return 0;
+	case WM_SYSCOMMAND:
+		if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
+			return 0;
+		break;
+	case WM_DESTROY:
+		::PostQuitMessage(0);
+		return 0;
+	case WM_DPICHANGED:
+		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DpiEnableScaleViewports)
+		{
+			//const int dpi = HIWORD(wParam);
+			//printf("WM_DPICHANGED to %d (%.0f%%)\n", dpi, (float)dpi / 96.0f * 100.0f);
+			const RECT* suggested_rect = (RECT*)lParam;
+			::SetWindowPos(hWnd, nullptr, suggested_rect->left, suggested_rect->top, suggested_rect->right - suggested_rect->left, suggested_rect->bottom - suggested_rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
+		}
+		break;
+	}
+	return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+}
+
+static std::string StringToUTF8(const std::string& gbkData)
+{
+	const char* GBK_LOCALE_NAME = "CHS";
+
+	std::wstring_convert<std::codecvt<wchar_t, char, mbstate_t>>
+		conv(new std::codecvt<wchar_t, char, mbstate_t>(GBK_LOCALE_NAME));
+	std::wstring wString = conv.from_bytes(gbkData);    // string => wstring
+
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
+	std::string utf8str = convert.to_bytes(wString);     // wstring => utf-8
+
+	return utf8str;
 }
